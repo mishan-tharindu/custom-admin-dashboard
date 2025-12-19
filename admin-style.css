@@ -1,0 +1,402 @@
+/* admin-style.css */
+
+/*
+|--------------------------------------------------------------------------
+| 5. FONT AWESOME ICON FIXES
+|--------------------------------------------------------------------------
+*/
+
+/* Target the container for the menu icon */
+#adminmenu .wp-menu-image {
+    position: relative;
+}
+
+/* Hide the default dashicons element */
+#adminmenu .wp-menu-image:before {
+    display: none !important;
+}
+
+/* * This rule injects the Font Awesome styling and prepares the space. 
+ * We target the immediate child of .wp-menu-image, which WordPress uses for the icon.
+ */
+#adminmenu .wp-menu-image .dashicons-before::before,
+#adminmenu .wp-menu-image::before {
+    /* Use the Font Awesome icon family */
+    font-family: 'Font Awesome 6 Free', 'Font Awesome 6 Pro' !important;
+    font-weight: 900 !important; /* Required for solid icons (fa-solid) */
+    -webkit-font-smoothing: antialiased;
+    font-size: 20px !important; /* Adjust size */
+    content: '' !important; /* Clear any default content */
+    display: block !important;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Center the icon */
+    color: white; /* Default color for all icons (matches your theme) */
+}
+
+/*
+|--------------------------------------------------------------------------
+| CUSTOM ICON INJECTION (Using Menu Item Slugs)
+|--------------------------------------------------------------------------
+*/
+
+/* 1. Dashboard Menu (Menu item class is 'menu-icon-dashboard') */
+#adminmenu li.menu-icon-dashboard .wp-menu-image::before {
+    /* Font Awesome Icon: house (Home) - \f015 */
+    content: '\f4fb' !important; 
+}
+
+/* 2. Posts Menu (Target class: 'menu-icon-post' from your HTML example) */
+#adminmenu li.menu-icon-post .wp-menu-image::before {
+    /* Font Awesome Icon: pencil-alt (Edit/Write) - \f303 */
+    content: '\f5ad' !important; 
+}
+
+/* 3. Media Menu (Menu item class is 'menu-icon-media') */
+#adminmenu li.menu-icon-media .wp-menu-image::before {
+    /* Font Awesome Icon: folder-open (Library) - \f07b */
+    content: '\f07b' !important; 
+}
+
+/* 4. Pages Menu (Menu item class is 'menu-icon-page') */
+#adminmenu li.menu-icon-page .wp-menu-image::before {
+    /* Font Awesome Icon: file-lines (Document) - \f15c */
+    content: '\f15c' !important; 
+}
+
+/* 5. Comments Menu (Menu item class is 'menu-icon-comments') */
+#adminmenu li.menu-icon-comments .wp-menu-image::before {
+    /* Font Awesome Icon: comment-dots (Comment Bubble) - \f4ad */
+    content: '\f4ad' !important; 
+}
+
+/* 6. Custom Plugin Menu (Toplevel menu item class is 'toplevel_page_[menu_slug]') */
+#adminmenu .toplevel_page_my-plugin-slug .wp-menu-image::before {
+    /* Font Awesome Icon: cog (Settings Gear) - \f013 */
+    content: '\e0e3' !important; 
+}
+
+/* 7. Custom Plugin Menu (Toplevel menu item class is 'toplevel_page_[menu_slug]') */
+#adminmenu li.menu-icon-appearance .wp-menu-image::before {
+    /* Font Awesome Icon: cog (Settings Gear) - \f013 */
+    content: '\f53f' !important; 
+}
+
+/* 8. Custom Plugin Menu (Toplevel menu item class is 'toplevel_page_[menu_slug]') */
+#adminmenu li.menu-icon-fl-builder-template .wp-menu-image::before {
+    /* Font Awesome Icon: cog (Settings Gear) - \f013 */
+    content: '\f1ea' !important; 
+}
+
+/* 9. Custom Plugin Menu (Toplevel menu item class is 'toplevel_page_[menu_slug]') */
+#adminmenu li.menu-icon-plugins .wp-menu-image::before {
+    /* Font Awesome Icon: cog (Settings Gear) - \f013 */
+    content: '\f1e6' !important; 
+}
+
+/* 10. Custom Plugin Menu (Toplevel menu item class is 'toplevel_page_[menu_slug]') */
+#adminmenu li.menu-icon-users .wp-menu-image::before {
+    /* Font Awesome Icon: cog (Settings Gear) - \f013 */
+    content: '\f007' !important; 
+}
+
+/* 11. Custom Plugin Menu (Toplevel menu item class is 'toplevel_page_[menu_slug]') */
+#adminmenu li.menu-icon-tools .wp-menu-image::before {
+    /* Font Awesome Icon: cog (Settings Gear) - \f013 */
+    content: '\f7d9' !important; 
+}
+
+/* 9. Custom Plugin Menu (Toplevel menu item class is 'toplevel_page_[menu_slug]') */
+#adminmenu li.menu-icon-settings .wp-menu-image::before {
+    /* Font Awesome Icon: cog (Settings Gear) - \f013 */
+    content: '\f085' !important; 
+}
+
+
+/* Style the Font Awesome icons directly */
+#adminmenu .wp-menu-image .fa {
+    font-size: 18px; /* Standard icon size */
+    width: 20px;
+    height: 20px;
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Center the icon */
+    color: #a7a7a7 !important; /* Default icon color (matches text) */
+}
+
+/* Change icon color on hover/active state */
+#adminmenu li.menu-top:hover .fa,
+#adminmenu .current .fa,
+#adminmenu .wp-has-current-submenu .fa {
+    color: #ffffff !important; /* White color on hover/active */
+}
+
+/* By adding these rules, your PHP code replaces the icon class, and the CSS correctly styles the new Font Awesome icon within the existing menu structure, achieving a modern look.
+
+
+
+
+/* Example: Change the color of the custom widget title */
+#custom_welcome_widget h3 {
+    color: #0084B4;
+    /* WordPress primary blue */
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+
+/* Example: Simple branding in the footer */
+#wp-footer-text {
+    color: #2C3E50 !important;
+}
+
+#wp-footer-text a {
+    color: #0073aa;
+    text-decoration: none;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 1. DARK ADMIN MENU STYLING
+|--------------------------------------------------------------------------
+*/
+
+/* Admin Side Bar  */
+#adminmenu .wp-submenu a {
+        color: #2C3E50;
+}
+
+
+#adminmenu li a:focus div.wp-menu-image:before, #adminmenu li.opensub div.wp-menu-image:before, #adminmenu li:hover div.wp-menu-image:before {
+    color: white; 
+}
+
+#adminmenu li:hover div.wp-menu-image:before, #adminmenu li:hover div.wp-menu-name {
+    color: white; 
+}
+
+#adminmenu .wp-submenu a:focus, #adminmenu .wp-submenu a:hover, #adminmenu a:hover, #adminmenu li.menu-top>a:focus {
+    color: white;
+    background: #0084B4;
+}
+
+#adminmenu, #adminmenu .wp-submenu, #adminmenuback, #adminmenuwrap {
+    width: 160px;
+    background-color: #ff6701;
+}
+
+
+/* The main container and background */
+#adminmenumain,
+#adminmenuwrap,
+#adminmenu,
+#adminmenu .wp-submenu {
+    background: #ff6701;
+    /* Dark background color */
+}
+
+
+#adminmenu div.wp-menu-image:before {
+    color: white;
+    width: 25px;
+    height: 25px;
+    font-size: 25px;
+}
+
+#adminmenu div.wp-menu-image {
+    margin-right: 10px;
+    margin-left: 5px;
+}
+
+#adminmenu a:focus, #adminmenu a:hover, .folded #adminmenu .wp-submenu-head:hover {
+    box-shadow: inset 4px 0 0 0 white;
+    transition: box-shadow .1s linear;
+}
+
+/* Primary menu links and icons */
+#adminmenu a {
+    color: #2C3E50;
+    font-weight: 500 !important;
+}
+
+/* Hover and active states */
+#adminmenu li.menu-top:hover,
+#adminmenu .wp-has-current-submenu .wp-menu-text,
+#adminmenu .wp-has-current-submenu a.current,
+#adminmenu .wp-has-current-submenu.menu-top a.menu-top {
+    background: #0084B4;
+    color: #2C3E50;
+        box-shadow: inset 4px 0 0 0 white;
+    transition: box-shadow .1s linear;
+}
+
+#adminmenu li.menu-top:hover, #adminmenu .wp-has-current-submenu .wp-menu-text, #adminmenu .wp-has-current-submenu a.current, #adminmenu .wp-has-current-submenu.menu-top a.menu-top {
+    color: white;
+}
+
+
+/* Submenu background */
+#adminmenu .wp-submenu {
+    background-color: #ff6701;
+    border-left: 3px solid #0084B4;
+    /* Highlight border */
+}
+
+#adminmenu li.menu-top:hover,
+#adminmenu li.opensub>a.menu-top,
+#adminmenu li>a.menu-top:focus {
+    position: relative;
+    background-color: #0084B4 !important;
+    color: #0084B4;
+}
+
+#adminmenu li.menu-top:hover,
+#adminmenu li.opensub>a.menu-top,
+#adminmenu li>a.menu-top:focus {
+    position: relative;
+    background-color: #0084B4;
+    color: #0084B4;
+}
+
+#adminmenu li.wp-has-submenu.wp-not-current-submenu.opensub:hover:after, #adminmenu li.wp-has-submenu.wp-not-current-submenu:focus-within:after {
+    border-right-color: white;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 2. TOP BAR AVATAR STYLING
+|--------------------------------------------------------------------------
+*/
+/* Position the Avatar (Admin Bar is #wpadminbar) */
+#wpadminbar {
+    background: #ff6701 !important;
+    /* Very dark top bar */
+}
+
+#wpadminbar #wp-admin-bar-custom-user-avatar>.ab-item {
+    padding: 0;
+    height: 32px;
+}
+
+#wpadminbar #wp-admin-bar-custom-user-avatar .ab-item-avatar img {
+    border-radius: 50%;
+    /* Makes the image round */
+    width: 24px;
+    height: 24px;
+    margin-top: 4px;
+    vertical-align: top;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 3. LEADERBOARD WIDGET STYLING
+|--------------------------------------------------------------------------
+*/
+.writer-leaderboard-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.leaderboard-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.leaderboard-item:last-child {
+    border-bottom: none;
+}
+
+.leaderboard-avatar img {
+    border-radius: 50%;
+    margin-right: 15px;
+}
+
+.leaderboard-info {
+    flex-grow: 1;
+}
+
+.leaderboard-info strong {
+    display: block;
+    font-size: 1.1em;
+}
+
+.leaderboard-info .post-count {
+    color: #666;
+    font-size: 0.9em;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 5. WIN STICKER STYLING
+|--------------------------------------------------------------------------
+*/
+.leaderboard-info strong {
+    /* Ensure the name and sticker are displayed inline */
+    display: inline;
+    font-size: 1.1em;
+    margin-right: 5px;
+}
+
+.win-sticker {
+    font-size: 1.2em;
+    /* Make the trophy slightly larger */
+    vertical-align: middle;
+    /* Align it with the text */
+    margin-left: 5px;
+    font-weight: normal;
+    /* Ensure the emoji itself isn't bolded */
+}
+
+.leaderboard-info .post-count {
+    /* This ensures the post count drops to the next line */
+    display: block;
+    color: #666;
+    font-size: 0.9em;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 6. LEFT MENU AVATAR STYLING
+|--------------------------------------------------------------------------
+*/
+.custom-admin-avatar-link {
+    display: block;
+    text-decoration: none;
+    padding: 20px 0;
+    text-align: center;
+    position: absolute;
+    /* Position relative to #adminmenuwrap */
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #23282d;
+    /* Match the menu background */
+    z-index: 100;
+    border-bottom: 1px solid #1c2023;
+    /* Subtle separator */
+}
+
+.custom-admin-user-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.custom-admin-user-info img {
+    border-radius: 50%;
+    margin-bottom: 5px;
+    border: 2px solid #0073aa;
+    /* Highlight border */
+}
+
+.custom-admin-user-name {
+    color: #ffffff;
+    /* White text for visibility */
+    font-size: 0.9em;
+    font-weight: 600;
+}
