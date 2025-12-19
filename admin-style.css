@@ -27,8 +27,9 @@
     width: 60px;
     height: 60px;
     border-radius: 50% !important;
-    border: 3px solid #0084B4 !important; /* Your blue theme color */
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    border: 3px solid #0084B4 !important;
+    /* Your blue theme color */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     margin: 0 auto 10px auto;
     display: block;
     transition: transform 0.3s ease;
@@ -42,6 +43,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: 100%;
 }
 
 #adminmenuwrap .custom-sidebar-profile .profile-greeting {
@@ -53,10 +55,14 @@
 }
 
 #adminmenuwrap .custom-sidebar-profile .profile-name {
+    display: block;
     color: #ffffff !important;
-    font-weight: 700;
-    font-size: 14px;
-    margin-top: 5px;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+    /* Slightly smaller to fit more text */
+    word-break: break-all;
+    /* Breaks the email string at any character */
+    margin-top: 3px;
     line-height: 1.2;
 }
 
@@ -72,7 +78,8 @@
 }
 
 .custom-logout-btn {
-    background: #d63638 !important; /* Standard WP Red */
+    background: #d63638 !important;
+    /* Standard WP Red */
     color: #fff !important;
     text-decoration: none !important;
     display: flex !important;
@@ -91,7 +98,7 @@
 
 .custom-logout-btn:hover {
     background: #b32d2e !important;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 /* | Handle Collapsed Sidebar (Folded state)
@@ -121,7 +128,7 @@
 |--------------------------------------------------------------------------
 */
 #wp-admin-bar-top-secondary {
-  display: none;
+    display: none;
 }
 
 /*
@@ -147,16 +154,21 @@
 #adminmenu .wp-menu-image::before {
     /* Use the Font Awesome icon family */
     font-family: 'Font Awesome 6 Free', 'Font Awesome 6 Pro' !important;
-    font-weight: 900 !important; /* Required for solid icons (fa-solid) */
+    font-weight: 900 !important;
+    /* Required for solid icons (fa-solid) */
     -webkit-font-smoothing: antialiased;
-    font-size: 20px !important; /* Adjust size */
-    content: '' !important; /* Clear any default content */
+    font-size: 20px !important;
+    /* Adjust size */
+    content: '' !important;
+    /* Clear any default content */
     display: block !important;
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%); /* Center the icon */
-    color: white; /* Default color for all icons (matches your theme) */
+    transform: translate(-50%, -50%);
+    /* Center the icon */
+    color: white;
+    /* Default color for all icons (matches your theme) */
 }
 
 /*
@@ -168,94 +180,98 @@
 /* 1. Dashboard Menu (Menu item class is 'menu-icon-dashboard') */
 #adminmenu li.menu-icon-dashboard .wp-menu-image::before {
     /* Font Awesome Icon: house (Home) - \f015 */
-    content: '\f4fb' !important; 
+    content: '\f4fb' !important;
 }
 
 /* 2. Posts Menu (Target class: 'menu-icon-post' from your HTML example) */
 #adminmenu li.menu-icon-post .wp-menu-image::before {
     /* Font Awesome Icon: pencil-alt (Edit/Write) - \f303 */
-    content: '\f5ad' !important; 
+    content: '\f5ad' !important;
 }
 
 /* 3. Media Menu (Menu item class is 'menu-icon-media') */
 #adminmenu li.menu-icon-media .wp-menu-image::before {
     /* Font Awesome Icon: folder-open (Library) - \f07b */
-    content: '\f07b' !important; 
+    content: '\f07b' !important;
 }
 
 /* 4. Pages Menu (Menu item class is 'menu-icon-page') */
 #adminmenu li.menu-icon-page .wp-menu-image::before {
     /* Font Awesome Icon: file-lines (Document) - \f15c */
-    content: '\f15c' !important; 
+    content: '\f15c' !important;
 }
 
 /* 5. Comments Menu (Menu item class is 'menu-icon-comments') */
 #adminmenu li.menu-icon-comments .wp-menu-image::before {
     /* Font Awesome Icon: comment-dots (Comment Bubble) - \f4ad */
-    content: '\f4ad' !important; 
+    content: '\f4ad' !important;
 }
 
 /* 6. Custom Plugin Menu (Toplevel menu item class is 'toplevel_page_[menu_slug]') */
 #adminmenu .toplevel_page_my-plugin-slug .wp-menu-image::before {
     /* Font Awesome Icon: cog (Settings Gear) - \f013 */
-    content: '\e0e3' !important; 
+    content: '\e0e3' !important;
 }
 
 /* 7. Custom Plugin Menu (Toplevel menu item class is 'toplevel_page_[menu_slug]') */
 #adminmenu li.menu-icon-appearance .wp-menu-image::before {
     /* Font Awesome Icon: cog (Settings Gear) - \f013 */
-    content: '\f53f' !important; 
+    content: '\f53f' !important;
 }
 
 /* 8. Custom Plugin Menu (Toplevel menu item class is 'toplevel_page_[menu_slug]') */
 #adminmenu li.menu-icon-fl-builder-template .wp-menu-image::before {
     /* Font Awesome Icon: cog (Settings Gear) - \f013 */
-    content: '\f1ea' !important; 
+    content: '\f1ea' !important;
 }
 
 /* 9. Custom Plugin Menu (Toplevel menu item class is 'toplevel_page_[menu_slug]') */
 #adminmenu li.menu-icon-plugins .wp-menu-image::before {
     /* Font Awesome Icon: cog (Settings Gear) - \f013 */
-    content: '\f1e6' !important; 
+    content: '\f1e6' !important;
 }
 
 /* 10. Custom Plugin Menu (Toplevel menu item class is 'toplevel_page_[menu_slug]') */
 #adminmenu li.menu-icon-users .wp-menu-image::before {
     /* Font Awesome Icon: cog (Settings Gear) - \f013 */
-    content: '\f007' !important; 
+    content: '\f007' !important;
 }
 
 /* 11. Custom Plugin Menu (Toplevel menu item class is 'toplevel_page_[menu_slug]') */
 #adminmenu li.menu-icon-tools .wp-menu-image::before {
     /* Font Awesome Icon: cog (Settings Gear) - \f013 */
-    content: '\f7d9' !important; 
+    content: '\f7d9' !important;
 }
 
 /* 9. Custom Plugin Menu (Toplevel menu item class is 'toplevel_page_[menu_slug]') */
 #adminmenu li.menu-icon-settings .wp-menu-image::before {
     /* Font Awesome Icon: cog (Settings Gear) - \f013 */
-    content: '\f085' !important; 
+    content: '\f085' !important;
 }
 
 
 /* Style the Font Awesome icons directly */
 #adminmenu .wp-menu-image .fa {
-    font-size: 18px; /* Standard icon size */
+    font-size: 18px;
+    /* Standard icon size */
     width: 20px;
     height: 20px;
     display: block;
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%); /* Center the icon */
-    color: #a7a7a7 !important; /* Default icon color (matches text) */
+    transform: translate(-50%, -50%);
+    /* Center the icon */
+    color: #a7a7a7 !important;
+    /* Default icon color (matches text) */
 }
 
 /* Change icon color on hover/active state */
 #adminmenu li.menu-top:hover .fa,
 #adminmenu .current .fa,
 #adminmenu .wp-has-current-submenu .fa {
-    color: #ffffff !important; /* White color on hover/active */
+    color: #ffffff !important;
+    /* White color on hover/active */
 }
 
 /* By adding these rules, your PHP code replaces the icon class, and the CSS correctly styles the new Font Awesome icon within the existing menu structure, achieving a modern look.
@@ -289,24 +305,33 @@
 
 /* Admin Side Bar  */
 #adminmenu .wp-submenu a {
-        color: #2C3E50;
+    color: #2C3E50;
 }
 
 
-#adminmenu li a:focus div.wp-menu-image:before, #adminmenu li.opensub div.wp-menu-image:before, #adminmenu li:hover div.wp-menu-image:before {
-    color: white; 
+#adminmenu li a:focus div.wp-menu-image:before,
+#adminmenu li.opensub div.wp-menu-image:before,
+#adminmenu li:hover div.wp-menu-image:before {
+    color: white;
 }
 
-#adminmenu li:hover div.wp-menu-image:before, #adminmenu li:hover div.wp-menu-name {
-    color: white; 
+#adminmenu li:hover div.wp-menu-image:before,
+#adminmenu li:hover div.wp-menu-name {
+    color: white;
 }
 
-#adminmenu .wp-submenu a:focus, #adminmenu .wp-submenu a:hover, #adminmenu a:hover, #adminmenu li.menu-top>a:focus {
+#adminmenu .wp-submenu a:focus,
+#adminmenu .wp-submenu a:hover,
+#adminmenu a:hover,
+#adminmenu li.menu-top>a:focus {
     color: white;
     background: #0084B4;
 }
 
-#adminmenu, #adminmenu .wp-submenu, #adminmenuback, #adminmenuwrap {
+#adminmenu,
+#adminmenu .wp-submenu,
+#adminmenuback,
+#adminmenuwrap {
     width: 160px;
     background-color: #ff6701;
 }
@@ -334,7 +359,9 @@
     margin-left: 5px;
 }
 
-#adminmenu a:focus, #adminmenu a:hover, .folded #adminmenu .wp-submenu-head:hover {
+#adminmenu a:focus,
+#adminmenu a:hover,
+.folded #adminmenu .wp-submenu-head:hover {
     box-shadow: inset 4px 0 0 0 white;
     transition: box-shadow .1s linear;
 }
@@ -352,11 +379,14 @@
 #adminmenu .wp-has-current-submenu.menu-top a.menu-top {
     background: #0084B4;
     color: #2C3E50;
-        box-shadow: inset 4px 0 0 0 white;
+    box-shadow: inset 4px 0 0 0 white;
     transition: box-shadow .1s linear;
 }
 
-#adminmenu li.menu-top:hover, #adminmenu .wp-has-current-submenu .wp-menu-text, #adminmenu .wp-has-current-submenu a.current, #adminmenu .wp-has-current-submenu.menu-top a.menu-top {
+#adminmenu li.menu-top:hover,
+#adminmenu .wp-has-current-submenu .wp-menu-text,
+#adminmenu .wp-has-current-submenu a.current,
+#adminmenu .wp-has-current-submenu.menu-top a.menu-top {
     color: white;
 }
 
@@ -384,7 +414,8 @@
     color: #0084B4;
 }
 
-#adminmenu li.wp-has-submenu.wp-not-current-submenu.opensub:hover:after, #adminmenu li.wp-has-submenu.wp-not-current-submenu:focus-within:after {
+#adminmenu li.wp-has-submenu.wp-not-current-submenu.opensub:hover:after,
+#adminmenu li.wp-has-submenu.wp-not-current-submenu:focus-within:after {
     border-right-color: white;
 }
 

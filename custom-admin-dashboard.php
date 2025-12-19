@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Custom Admin Dashboard
  * Description: A custom plugin to modify and clean up the WordPress admin dashboard.
- * Version: 1.0
+ * Version: 1.2.0
  * Author: TechM
  * Author URI: https://yourwebsite.com
  */
@@ -51,7 +51,7 @@ function custom_admin_sidebar_profile()
                                 <img src="<?php echo $avatar; ?>" alt="User Avatar">
                             </div>
                             <div class="profile-info">
-                                <span class="profile-greeting">Welcome back,</span>
+                                <span class="profile-greeting">Welcome back</span>
                                 <span class="profile-name"><?php echo esc_html($current_user->display_name); ?></span>
                             </div>
                         </a>
