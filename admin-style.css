@@ -1,4 +1,128 @@
 /* admin-style.css */
+/*
+|--------------------------------------------------------------------------
+| 1. SIDEBAR PROFILE HEADER (Top of Sidebar)
+|--------------------------------------------------------------------------
+| We use #adminmenuwrap prefix to increase specificity so WP doesn't override it.
+*/
+#adminmenuwrap .custom-sidebar-profile {
+    background: rgba(0, 0, 0, 0.2) !important;
+    padding: 25px 10px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    margin-bottom: 5px;
+    text-align: center;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#adminmenuwrap .custom-sidebar-profile .profile-link {
+    text-decoration: none !important;
+    display: block;
+    outline: none;
+    box-shadow: none;
+}
+
+#adminmenuwrap .custom-sidebar-profile .profile-avatar img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50% !important;
+    border: 3px solid #0084B4 !important; /* Your blue theme color */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    margin: 0 auto 10px auto;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+#adminmenuwrap .custom-sidebar-profile .profile-link:hover img {
+    transform: scale(1.1);
+}
+
+#adminmenuwrap .custom-sidebar-profile .profile-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#adminmenuwrap .custom-sidebar-profile .profile-greeting {
+    color: rgba(255, 255, 255, 0.8) !important;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    line-height: 1;
+}
+
+#adminmenuwrap .custom-sidebar-profile .profile-name {
+    color: #ffffff !important;
+    font-weight: 700;
+    font-size: 14px;
+    margin-top: 5px;
+    line-height: 1.2;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 2. SIDEBAR LOGOUT BUTTON (Bottom of Sidebar)
+|--------------------------------------------------------------------------
+*/
+.custom-sidebar-logout-wrap {
+    padding: 15px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 10px;
+}
+
+.custom-logout-btn {
+    background: #d63638 !important; /* Standard WP Red */
+    color: #fff !important;
+    text-decoration: none !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 10px !important;
+    border-radius: 5px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.custom-logout-btn i {
+    margin-right: 10px;
+    font-size: 16px;
+}
+
+.custom-logout-btn:hover {
+    background: #b32d2e !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* | Handle Collapsed Sidebar (Folded state)
+*/
+.folded #adminmenuwrap .custom-sidebar-profile .profile-info,
+.folded .custom-sidebar-logout-wrap .logout-text {
+    display: none !important;
+}
+
+.folded #adminmenuwrap .custom-sidebar-profile .profile-avatar img {
+    width: 30px !important;
+    height: 30px !important;
+    margin-bottom: 0 !important;
+}
+
+.folded .custom-sidebar-logout-wrap {
+    padding: 10px 5px !important;
+}
+
+.folded .custom-logout-btn i {
+    margin-right: 0;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 3. TOPBAR AVATAR STYLING
+|--------------------------------------------------------------------------
+*/
+#wp-admin-bar-top-secondary {
+  display: none;
+}
 
 /*
 |--------------------------------------------------------------------------
