@@ -24,8 +24,8 @@
 }
 
 #adminmenuwrap .custom-sidebar-profile .profile-avatar img {
-    width: 60px;
-    height: 60px;
+    width: 120px;
+    height: 120px;
     border-radius: 50% !important;
     border: 3px solid #0084B4 !important;
     /* Your blue theme color */
@@ -129,6 +129,31 @@
 */
 #wp-admin-bar-top-secondary {
     display: none;
+}
+
+/*
+|--------------------------------------------------------------------------
+| 6. HIDE PERSONAL OPTIONS ON PROFILE PAGE
+|--------------------------------------------------------------------------
+*/
+#your-profile .user-rich-editing-wrap,
+#your-profile .user-syntax-highlighting-wrap,
+#your-profile .user-admin-color-wrap,
+#your-profile .user-comment-shortcuts-wrap,
+#your-profile .user-admin-bar-front-wrap,
+#your-profile .user-language-wrap,
+#your-profile h2:first-of-type,
+#your-profile h3:first-of-type {
+    display: none !important;
+}
+
+/* Adjust the custom profile section spacing when moved to top */
+.custom-profile-image-section {
+    /* margin-bottom: 30px; */
+    background: #fff;
+    padding: 20px;
+    /* border: 1px solid #ccd0d4; */
+    /* box-shadow: 0 1px 1px rgba(0,0,0,.04); */
 }
 
 /*
@@ -334,6 +359,11 @@
 #adminmenuwrap {
     width: 160px;
     background-color: #ff6701;
+}
+
+#adminmenu .wp-has-current-submenu .wp-submenu .wp-submenu-head, #adminmenu li.current a.menu-top, #adminmenu li.wp-has-current-submenu a.wp-has-current-submenu {
+    background: #0084B4;
+    color: #fff;
 }
 
 

@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Custom Admin Dashboard
  * Description: A custom plugin to modify and clean up the WordPress admin dashboard.
- * Version: 1.2.0
+ * Version: 1.3.0
  * Author: TechM
  * Author URI: https://yourwebsite.com
  */
@@ -37,7 +37,13 @@ add_action('wp_dashboard_setup', 'custom_remove_dashboard_widgets');
 function custom_admin_sidebar_profile()
 {
     $current_user = wp_get_current_user();
-    $avatar = get_avatar_url($current_user->ID, array('size' => 64));
+    // FIX: Check for custom avatar meta first
+    $custom_avatar_id = get_user_meta($current_user->ID, 'custom_avatar', true);
+    if ($custom_avatar_id) {
+        $avatar = wp_get_attachment_url($custom_avatar_id);
+    } else {
+        $avatar = get_avatar_url($current_user->ID, array('size' => 128));
+    }
     $profile_url = admin_url('profile.php');
     $logout_url = wp_logout_url(admin_url());
 ?>
@@ -77,7 +83,64 @@ function custom_admin_sidebar_profile()
 }
 add_action('admin_footer', 'custom_admin_sidebar_profile');
 
+/**
+ * 4. RESTRICT MENU ITEMS FOR NON-ADMINS
+ */
+function custom_restrict_admin_menus()
+{
+    // Check if the current user is NOT an administrator
+    if (! current_user_can('administrator')) {
+        remove_menu_page('edit.php?post_type=page');          // Pages
+        remove_menu_page('themes.php');                       // Appearance
+        remove_menu_page('edit.php?post_type=fl-theme-layout'); // Beaver Builder
+        remove_menu_page('plugins.php');                      // Plugins
+        remove_menu_page('users.php');                        // Users
+        remove_menu_page('tools.php');                        // Tools
+    }
+}
+// Priority 999 ensures this runs after plugins have registered their menus
+add_action('admin_menu', 'custom_restrict_admin_menus', 999);
 
+/**
+ * 5. CUSTOM PROFILE IMAGE UI
+ */
+function custom_user_profile_fields($user) {
+    $custom_avatar_id = get_user_meta($user->ID, 'custom_avatar', true);
+    $custom_avatar_url = $custom_avatar_id ? wp_get_attachment_url($custom_avatar_id) : '';
+    ?>
+    <div class="custom-profile-image-section">
+        <h3>Profile Image</h3>
+        <table class="form-table">
+            <tr>
+                <th><label for="custom_avatar">Custom Photo</label></th>
+                <td>
+                    <div id="custom_avatar_preview" style="margin-bottom: 10px;">
+                        <?php if ($custom_avatar_url) : ?>
+                            <img src="<?php echo esc_url($custom_avatar_url); ?>" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid #ccc;">
+                        <?php endif; ?>
+                    </div>
+                    <input type="hidden" name="custom_avatar" id="custom_avatar_id" value="<?php echo esc_attr($custom_avatar_id); ?>">
+                    <button type="button" class="button button-primary" id="custom_avatar_button">Select Profile Image</button>
+                    <button type="button" class="button" id="custom_avatar_remove" style="<?php echo $custom_avatar_id ? '' : 'display:none;'; ?>">Remove</button>
+                    <p class="description">Upload a custom image to replace your Gravatar.</p>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <?php
+}
+add_action('show_user_profile', 'custom_user_profile_fields');
+add_action('edit_user_profile', 'custom_user_profile_fields');
+
+function save_custom_user_profile_fields($user_id)
+{
+    if (!current_user_can('edit_user', $user_id)) return false;
+    if (isset($_POST['custom_avatar'])) {
+        update_user_meta($user_id, 'custom_avatar', sanitize_text_field($_POST['custom_avatar']));
+    }
+}
+add_action('personal_options_update', 'save_custom_user_profile_fields');
+add_action('edit_user_profile_update', 'save_custom_user_profile_fields');
 
 /**
  * Add a custom welcome widget to the dashboard
@@ -112,7 +175,7 @@ function custom_dashboard_widget_content()
 /**
  * Enqueue custom admin styles
  */
-function custom_admin_styles()
+function custom_admin_styles($hook)
 {
     // Only load the CSS on the main dashboard page
     // if ( 'index.php' !== $GLOBALS['pagenow'] ) {
@@ -138,6 +201,47 @@ function custom_admin_styles()
         array(),
         $version // This is the magic part!
     );
+
+    // 3. Enqueue Media Uploader only on Profile pages
+    if ('profile.php' === $hook || 'user-edit.php' === $hook) {
+        wp_enqueue_media();
+
+        $js_code = "
+            jQuery(document).ready(function($) {
+                // Move our custom profile section to the top of the profile form
+                var \$profileSection = $('.custom-profile-image-section');
+                if (\$profileSection.length) {
+                    $('#your-profile').prepend(\$profileSection);
+                }
+
+                var frame;
+                $('#custom_avatar_button').on('click', function(e) {
+                    e.preventDefault();
+                    if (frame) { frame.open(); return; }
+                    frame = wp.media({
+                        title: 'Select Profile Image',
+                        button: { text: 'Use this image' },
+                        multiple: false
+                    });
+                    frame.on('select', function() {
+                        var attachment = frame.state().get('selection').first().toJSON();
+                        $('#custom_avatar_id').val(attachment.id);
+                        $('#custom_avatar_preview').html('<img src=\"'+attachment.url+'\" style=\"width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid #ccc;\">');
+                        $('#custom_avatar_remove').show();
+                    });
+                    frame.open();
+                });
+                $('#custom_avatar_remove').on('click', function() {
+                    $('#custom_avatar_id').val('');
+                    $('#custom_avatar_preview').empty();
+                    $(this).hide();
+                });
+                // Hide default Gravatar section
+                $('.user-profile-picture').closest('tr').hide();
+            });
+        ";
+        wp_add_inline_script('jquery', $js_code);
+    }
 }
 add_action('admin_enqueue_scripts', 'custom_admin_styles');
 
@@ -183,20 +287,12 @@ add_action('wp_dashboard_setup', 'custom_add_leaderboard_widget');
  * Content for the Leaderboard Widget - STICKER VERSION
  * Displays all authors with a sticker next to the winner.
  */
-function custom_writer_leaderboard_content()
-{
-    // 1. Get all users who have published at least one post
-    $all_users = get_users(array(
-        'who' => 'authors',
-    ));
-
+function custom_writer_leaderboard_content() {
+    $all_users = get_users(array('who' => 'authors'));
     $leaderboard = array();
 
-    // 2. Loop through users and count their published posts
     foreach ($all_users as $user) {
         $post_count = count_user_posts($user->ID, 'post', true);
-
-        // Only include users with at least 1 published post
         if ($post_count > 0) {
             $leaderboard[] = array(
                 'id' => $user->ID,
@@ -206,41 +302,35 @@ function custom_writer_leaderboard_content()
         }
     }
 
-    // 3. Sort the array by post count (highest first)
-    usort($leaderboard, function ($a, $b) {
-        return $b['count'] <=> $a['count'];
-    });
+    usort($leaderboard, function ($a, $b) { return $b['count'] <=> $a['count']; });
 
-    // 4. Display all writers
     echo '<h3>All Authors</h3>';
     echo '<ul class="writer-leaderboard-list">';
 
     if (empty($leaderboard)) {
         echo '<p>No authors found with published posts.</p>';
     } else {
-        $rank = 0; // Initialize rank counter
+        $rank = 0;
         foreach ($leaderboard as $writer) {
             $rank++;
-            $avatar = get_avatar($writer['id'], 48);
-
-            // Check if this is the 1st place user (rank 1)
-            $is_winner = ($rank === 1) ? true : false;
-
-            echo '<li class="leaderboard-item">';
-            echo '<div class="leaderboard-avatar">' . $avatar . '</div>';
-            echo '<div class="leaderboard-info">';
-
-            // Display name and conditionally the sticker
-            echo '<strong>' . esc_html($writer['name']) . '</strong>';
-
-            echo '<span class="post-count">' . number_format_i18n($writer['count']) . ' Posts</span>';
-            echo '</div>';
-            echo '<div class="post-winner-sticker">';
-            // The WIN STICKER (Trophy Emoji)
-            if ($is_winner) {
-                echo '<span class="win-sticker"> 🏆</span>';
+            
+            // Check for custom avatar meta for the leaderboard as well
+            $custom_avatar_id = get_user_meta($writer['id'], 'custom_avatar', true);
+            if ($custom_avatar_id) {
+                $avatar_url = wp_get_attachment_url($custom_avatar_id);
+                $avatar = '<img src="' . esc_url($avatar_url) . '" width="48" height="48" style="border-radius:50%; object-fit:cover;">';
+            } else {
+                $avatar = get_avatar($writer['id'], 48);
             }
+
+            $is_winner = ($rank === 1);
+            echo '<li class="leaderboard-item" style="display:flex; align-items:center; margin-bottom:10px; padding:10px; border-bottom:1px solid #eee;">';
+            echo '<div class="leaderboard-avatar" style="margin-right:15px;">' . $avatar . '</div>';
+            echo '<div class="leaderboard-info" style="flex-grow:1;">';
+            echo '<strong>' . esc_html($writer['name']) . '</strong>';
+            echo '<br><span class="post-count" style="color:#666; font-size:12px;">' . number_format_i18n($writer['count']) . ' Posts</span>';
             echo '</div>';
+            if ($is_winner) { echo '<div class="win-sticker" style="font-size:20px;">🏆</div>'; }
             echo '</li>';
         }
     }
