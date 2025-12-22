@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Custom Admin Dashboard
- * Description: A custom plugin to modify and clean up the WordPress admin dashboard.
+ * Description: A custom plugin to modify and clean up the WordPress admin dashboard. [wwmt_time_ago] or [wwmt_time_ago icon="clock"]
  * Version: 1.7.5
  * Author: TechM
  * Author URI: https://yourwebsite.com
@@ -459,28 +459,28 @@ function wwmt_time_ago() {
     
     // Return appropriate time format
     if ($time_diff < 60) {
-        return esc_html(floor($time_diff) . ' sec ago');
+        return esc_html(floor($time_diff) . ' sec');
     }
     if ($time_diff < 3600) {
-        return esc_html(floor($time_diff / 60) . ' min ago');
+        return esc_html(floor($time_diff / 60) . ' min');
     }
     if ($time_diff < 86400) {
-        return esc_html(floor($time_diff / 3600) . ' hour ago');
+        return esc_html(floor($time_diff / 3600) . ' hour');
     }
     if ($time_diff < 604800) {
-        return esc_html(floor($time_diff / 86400) . ' day ago');
+        return esc_html(floor($time_diff / 86400) . ' day');
     }
     if ($time_diff < 2592000) {
-        return esc_html(floor($time_diff / 604800) . ' week ago');
+        return esc_html(floor($time_diff / 604800) . ' week');
     }
-    return esc_html(floor($time_diff / 2592000) . ' month ago');
+    return esc_html(floor($time_diff / 2592000) . ' month');
 }
 
 // Shortcode usage: [wwmt_time_ago] or [wwmt_time_ago icon="clock"]
 function wwmt_time_ago_shortcode($atts) {
     $atts = shortcode_atts(array(
         'icon' => 'clock',  // clock, hourglass, calendar, history
-        'text' => 'Posted',
+        'text' => '',
     ), $atts, 'wwmt_time_ago');
     
     $time_ago = wwmt_time_ago();
@@ -494,7 +494,7 @@ function wwmt_time_ago_shortcode($atts) {
     
     $output = '<span class="wwmt-time-ago-shortcode">';
     $output .= '<i class="far ' . esc_attr($icon_class) . '"></i> ';
-    $output .= '<span class="time-label">' . esc_html($label_text) . ':</span> ';
+    $output .= '<span class="time-label">' . esc_html($label_text) . '</span> ';
     $output .= '<strong>' . $time_ago . '</strong>';
     $output .= '</span>';
     
@@ -542,7 +542,7 @@ function inject_time_elapsed_bb_javascript() {
                 }
                 
                 // Add the time elapsed HTML
-                var timeHtml = \'<span class="custom-time-ago-wrap"> | <span class="custom-time-ago"><i class="far fa-clock"></i> \' + "' . esc_js($time_ago) . '" + \'</span></span>\';
+                var timeHtml = \'<span class="custom-time-ago-wrap"><span class="custom-time-ago"><i class="far fa-clock"></i> \' + "' . esc_js($time_ago) . '" + \'</span></span>\';
                 
                 // Append to meta
                 $meta.append(timeHtml);
@@ -576,7 +576,7 @@ function cda_add_time_ago_to_bb_templates() {
     
     // Hook into Beaver Builder module output
     ob_start();
-    $time_html = '<span class="custom-time-ago-wrap"> | <span class="custom-time-ago">' . $time_ago . '</span></span>';
+    $time_html = '<span class="custom-time-ago-wrap"><span class="custom-time-ago">' . $time_ago . '</span></span>';
     echo $time_html;
 }
 
