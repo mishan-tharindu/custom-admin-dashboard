@@ -405,34 +405,6 @@ function my_plugin_settings_page() {
 }
 
 // ============================================================================
-// 11. POST TIME ELAPSED SHORTCODE
-// ============================================================================
-/**
- * Shortcode to display the time elapsed since the post was published.
- * Usage: [wwmt_time_ago]
- *
- * @return string Time elapsed in a human-readable format.
- */
-function wwmt_time_ago() {
-    $time_diff = current_time('timestamp') - get_the_time('U');
-
-    if ($time_diff < 60) {
-        return esc_html(floor($time_diff) . ' sec');
-    }
-
-    if ($time_diff < 3600) {
-        return esc_html(floor($time_diff / 60) . ' min');
-    }
-
-    if ($time_diff < 86400) {
-        return esc_html(floor($time_diff / 3600) . ' hours');
-    }
-
-    return esc_html(floor($time_diff / 86400) . ' d');
-}
-add_shortcode('wwmt_time_ago', 'wwmt_time_ago');
-
-// ============================================================================
 // 12. POST IMAGE COUNT SHORTCODE
 // ============================================================================
 /**
@@ -460,3 +432,226 @@ function custom_post_image_count_shortcode($atts) {
     return esc_html($image_count ? $image_count : 0);
 }
 add_shortcode('post_image_count', 'custom_post_image_count_shortcode');
+
+// ============================================================================
+// 11. POST TIME ELAPSED FUNCTION (IMPROVED)
+// ============================================================================
+/**
+ * Calculate and display time elapsed since post was published.
+ */
+function wwmt_time_ago() {
+    global $post;
+    
+    // Ensure we have a valid post
+    if (!$post || !isset($post->ID)) {
+        return '';
+    }
+    
+    // Get the post publication time
+    $post_date = get_post_time('U', false, $post->ID);
+    
+    if (!$post_date) {
+        return '';
+    }
+    
+    // Calculate time difference
+    $time_diff = current_time('timestamp') - $post_date;
+    
+    // Return appropriate time format
+    if ($time_diff < 60) {
+        return esc_html(floor($time_diff) . ' sec ago');
+    }
+    if ($time_diff < 3600) {
+        return esc_html(floor($time_diff / 60) . ' min ago');
+    }
+    if ($time_diff < 86400) {
+        return esc_html(floor($time_diff / 3600) . ' hour ago');
+    }
+    if ($time_diff < 604800) {
+        return esc_html(floor($time_diff / 86400) . ' day ago');
+    }
+    if ($time_diff < 2592000) {
+        return esc_html(floor($time_diff / 604800) . ' week ago');
+    }
+    return esc_html(floor($time_diff / 2592000) . ' month ago');
+}
+
+// Shortcode usage: [wwmt_time_ago] or [wwmt_time_ago icon="clock"]
+function wwmt_time_ago_shortcode($atts) {
+    $atts = shortcode_atts(array(
+        'icon' => 'clock',  // clock, hourglass, calendar, history
+        'text' => 'Posted',
+    ), $atts, 'wwmt_time_ago');
+    
+    $time_ago = wwmt_time_ago();
+    
+    if (empty($time_ago)) {
+        return '';
+    }
+    
+    $icon_class = 'fa-' . sanitize_text_field($atts['icon']);
+    $label_text = sanitize_text_field($atts['text']);
+    
+    $output = '<span class="wwmt-time-ago-shortcode">';
+    $output .= '<i class="far ' . esc_attr($icon_class) . '"></i> ';
+    $output .= '<span class="time-label">' . esc_html($label_text) . ':</span> ';
+    $output .= '<strong>' . $time_ago . '</strong>';
+    $output .= '</span>';
+    
+    return $output;
+}
+add_shortcode('wwmt_time_ago', 'wwmt_time_ago_shortcode');
+
+
+// ============================================================================
+// 13. BEAVER BUILDER META INJECTION - DIRECT HTML APPROACH
+// ============================================================================
+/**
+ * Inject time elapsed into Beaver Builder post grids using JavaScript.
+ * This adds the time to the meta section directly in the HTML.
+ */
+function inject_time_elapsed_bb_javascript() {
+    global $post;
+    
+    if (!$post || !isset($post->ID)) {
+        return;
+    }
+    
+    // Get time ago string
+    $time_ago = wwmt_time_ago();
+    
+    if (empty($time_ago)) {
+        return;
+    }
+    
+    // Only run on pages with Beaver Builder modules
+    if (!class_exists('FLBuilder')) {
+        return;
+    }
+    
+    echo '<script type="text/javascript">
+    (function($) {
+        $(document).ready(function() {
+            // Target all Beaver Builder post grid meta sections
+            $(".fl-post-grid-meta").each(function() {
+                var $meta = $(this);
+                
+                // Check if time already added
+                if ($meta.find(".custom-time-ago").length > 0) {
+                    return;
+                }
+                
+                // Add the time elapsed HTML
+                var timeHtml = \'<span class="custom-time-ago-wrap"> | <span class="custom-time-ago"><i class="far fa-clock"></i> \' + "' . esc_js($time_ago) . '" + \'</span></span>\';
+                
+                // Append to meta
+                $meta.append(timeHtml);
+            });
+        });
+    })(jQuery);
+    </script>';
+}
+add_action('wp_footer', 'inject_time_elapsed_bb_javascript', 999);
+
+
+// ============================================================================
+// ALTERNATIVE: Hook into Beaver Builder Template System
+// ============================================================================
+/**
+ * More direct approach - inject into Beaver Builder post grid template.
+ * This modifies the actual template output.
+ */
+function cda_add_time_ago_to_bb_templates() {
+    global $post;
+    
+    if (!$post || !isset($post->ID)) {
+        return;
+    }
+    
+    $time_ago = wwmt_time_ago();
+    
+    if (empty($time_ago)) {
+        return;
+    }
+    
+    // Hook into Beaver Builder module output
+    ob_start();
+    $time_html = '<span class="custom-time-ago-wrap"> | <span class="custom-time-ago">' . $time_ago . '</span></span>';
+    echo $time_html;
+}
+
+// Filter for post grid meta output
+add_filter('fl_builder_post_grid_meta', function($meta) {
+    // Make sure $meta is a string
+    if (!is_string($meta)) {
+        return $meta;
+    }
+    
+    global $post;
+    
+    if (!$post || !isset($post->ID)) {
+        return $meta;
+    }
+    
+    $time_ago = wwmt_calculate_time_ago($post->ID);
+    
+    if (!empty($time_ago)) {
+        $meta .= ' | <span class="custom-time-ago"><i class="far fa-clock"></i> ' . esc_html($time_ago) . ' ago</span>';
+    }
+    
+    return $meta;
+}, 999);
+
+
+// ============================================================================
+// 14. CSS STYLING FOR TIME ELAPSED
+// ============================================================================
+/**
+ * Add custom styling for the time elapsed display.
+ */
+function custom_time_elapsed_styles() {
+    echo '<style>
+        .custom-time-ago-wrap {
+            margin-left: 8px;
+            color: #666;
+        }
+        
+        .custom-time-ago {
+            font-style: italic;
+            color: #999;
+            font-size: 13px;
+        }
+        
+        .custom-time-ago i {
+            margin-right: 4px;
+            color: #999;
+        }
+        
+        .fl-post-grid-meta .custom-time-ago {
+            margin-left: 5px;
+        }
+        
+        /* Shortcode Styling */
+        .wwmt-time-ago-shortcode {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .wwmt-time-ago-shortcode i {
+            color: #999;
+        }
+        
+        .wwmt-time-ago-shortcode .time-label {
+            font-weight: 500;
+        }
+        
+        .wwmt-time-ago-shortcode strong {
+            color: #333;
+            font-weight: 600;
+        }
+    </style>';
+}
+add_action('wp_head', 'custom_time_elapsed_styles');
