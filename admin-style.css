@@ -1,0 +1,529 @@
+/* =========================================================================
+ * CUSTOM ADMIN DASHBOARD STYLES
+ * ========================================================================= */
+
+/* =========================================================================
+ * 1. SIDEBAR PROFILE HEADER (Top of Sidebar)
+ * ========================================================================= */
+#adminmenuwrap .custom-sidebar-profile {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 25px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    margin-bottom: 5px;
+    text-align: center;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#adminmenuwrap .custom-sidebar-profile .profile-link {
+    text-decoration: none;
+    display: block;
+    outline: none;
+    box-shadow: none;
+    transition: all 0.3s ease;
+}
+
+#adminmenuwrap .custom-sidebar-profile .profile-avatar img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 3px solid #0084b4;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    margin: 0 auto 10px;
+    display: block;
+    transition: transform 0.3s ease;
+    object-fit: cover;
+}
+
+#adminmenuwrap .custom-sidebar-profile .profile-link:hover img {
+    transform: scale(1.1);
+}
+
+#adminmenuwrap .custom-sidebar-profile .profile-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    gap: 5px;
+}
+
+#adminmenuwrap .custom-sidebar-profile .profile-greeting {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    line-height: 1;
+    display: block;
+}
+
+#adminmenuwrap .custom-sidebar-profile .profile-name {
+    display: block;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 13px;
+    word-break: break-word;
+    margin-top: 3px;
+    line-height: 1.2;
+}
+
+/* =========================================================================
+ * 2. SIDEBAR LOGOUT BUTTON (Bottom of Sidebar)
+ * ========================================================================= */
+.custom-sidebar-logout-wrap {
+    padding: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 10px;
+}
+
+.custom-logout-btn {
+    background: #d63638;
+    color: #fff;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    border-radius: 5px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    gap: 10px;
+}
+
+.custom-logout-btn i {
+    font-size: 16px;
+    display: inline-block;
+}
+
+.custom-logout-btn:hover {
+    background: #b32d2e;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.custom-logout-btn:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
+}
+
+/* Collapsed Sidebar State */
+.folded #adminmenuwrap .custom-sidebar-profile .profile-info,
+.folded .custom-sidebar-logout-wrap .logout-text {
+    display: none;
+}
+
+.folded #adminmenuwrap .custom-sidebar-profile .profile-avatar img {
+    width: 30px;
+    height: 30px;
+    margin-bottom: 0;
+}
+
+.folded .custom-sidebar-logout-wrap {
+    padding: 10px 5px;
+}
+
+.folded .custom-logout-btn i {
+    margin-right: 0;
+}
+
+/* =========================================================================
+ * 3. ADMIN MENU STYLING
+ * ========================================================================= */
+#adminmenumain,
+#adminmenuwrap,
+#adminmenu,
+#adminmenu .wp-submenu {
+    background: #ff6701;
+    width: 160px;
+}
+
+#adminmenuback {
+    width: 160px;
+    background-color: #ff6701;
+}
+
+#adminmenu a {
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+#adminmenu .wp-submenu a {
+    color: #2c3e50;
+}
+
+/* Menu Icon Styling */
+#adminmenu div.wp-menu-image:before {
+    color: white;
+    width: 22px;
+    height: 22px;
+    font-size: 22px;
+}
+
+#adminmenu div.wp-menu-image {
+    margin-right: 10px;
+    margin-left: 5px;
+}
+
+/* Hover and Focus States */
+#adminmenu li a:focus div.wp-menu-image:before,
+#adminmenu li.opensub div.wp-menu-image:before,
+#adminmenu li:hover div.wp-menu-image:before {
+    color: white;
+}
+
+#adminmenu li:hover div.wp-menu-name {
+    color: white;
+}
+
+#adminmenu .wp-submenu a:focus,
+#adminmenu .wp-submenu a:hover,
+#adminmenu a:hover,
+#adminmenu li.menu-top > a:focus {
+    color: white;
+    background: #0084b4;
+}
+
+#adminmenu li.menu-top:hover,
+#adminmenu li.opensub > a.menu-top,
+#adminmenu li > a.menu-top:focus {
+    position: relative;
+    background-color: #0084b4;
+    color: white;
+}
+
+#adminmenu li.menu-top:hover,
+#adminmenu li.opensub > a.menu-top,
+#adminmenu li > a.menu-top:focus {
+    box-shadow: inset 4px 0 0 0 white;
+    transition: box-shadow 0.1s linear;
+}
+
+#adminmenu a:focus,
+#adminmenu a:hover,
+.folded #adminmenu .wp-submenu-head:hover {
+    box-shadow: inset 4px 0 0 0 white;
+    transition: box-shadow 0.1s linear;
+}
+
+/* Current Menu Item */
+#adminmenu li.menu-top:hover .fa,
+#adminmenu .current .fa,
+#adminmenu .wp-has-current-submenu .fa {
+    color: #ffffff;
+}
+
+#adminmenu .wp-has-current-submenu .wp-submenu-head,
+#adminmenu li.current a.menu-top,
+#adminmenu li.wp-has-current-submenu a.wp-has-current-submenu {
+    background: #0084b4;
+    color: #fff;
+}
+
+#adminmenu .wp-has-current-submenu .wp-menu-text,
+#adminmenu .wp-has-current-submenu a.current,
+#adminmenu .wp-has-current-submenu.menu-top a.menu-top {
+    background: #0084b4;
+    color: white;
+}
+
+/* Submenu */
+#adminmenu .wp-submenu {
+    background-color: #ff6701;
+    border-left: 3px solid #0084b4;
+}
+
+#adminmenu li.wp-has-submenu.wp-not-current-submenu.opensub:hover:after,
+#adminmenu li.wp-has-submenu.wp-not-current-submenu:focus-within:after {
+    border-right-color: white;
+}
+
+/* Font Awesome Icon Styles */
+#adminmenu .wp-menu-image .fa {
+    font-size: 18px;
+    width: 20px;
+    height: 20px;
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #a7a7a7;
+}
+
+/* =========================================================================
+ * 4. FONT AWESOME ICON INJECTION
+ * ========================================================================= */
+#adminmenu .wp-menu-image:before {
+    font-family: 'Font Awesome 6 Free', 'Font Awesome 6 Pro';
+    font-weight: 900;
+    -webkit-font-smoothing: antialiased;
+    font-size: 20px;
+    content: '';
+    display: block;
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+}
+
+#adminmenu .wp-menu-image .dashicons-before:before {
+    display: none;
+}
+
+/* Dashboard */
+#adminmenu li.menu-icon-dashboard .wp-menu-image:before {
+    content: '\f4fb';
+}
+
+/* Posts */
+#adminmenu li.menu-icon-post .wp-menu-image:before {
+    content: '\f5ad';
+}
+
+/* Media */
+#adminmenu li.menu-icon-media .wp-menu-image:before {
+    content: '\f07b';
+}
+
+/* Pages */
+#adminmenu li.menu-icon-page .wp-menu-image:before {
+    content: '\f15c';
+}
+
+/* Comments */
+#adminmenu li.menu-icon-comments .wp-menu-image:before {
+    content: '\f4ad';
+}
+
+/* Appearance */
+#adminmenu li.menu-icon-appearance .wp-menu-image:before {
+    content: '\f53f';
+}
+
+/* Beaver Builder */
+#adminmenu li.menu-icon-fl-builder-template .wp-menu-image:before {
+    content: '\f1ea';
+}
+
+/* Plugins */
+#adminmenu li.menu-icon-plugins .wp-menu-image:before {
+    content: '\f1e6';
+}
+
+/* Users */
+#adminmenu li.menu-icon-users .wp-menu-image:before {
+    content: '\f007';
+}
+
+/* Tools */
+#adminmenu li.menu-icon-tools .wp-menu-image:before {
+    content: '\f7d9';
+}
+
+/* Settings */
+#adminmenu li.menu-icon-settings .wp-menu-image:before {
+    content: '\f085';
+}
+
+/* Custom Plugin */
+#adminmenu .toplevel_page_my-plugin-slug .wp-menu-image:before {
+    content: '\f013';
+}
+
+/* =========================================================================
+ * 5. TOP ADMIN BAR
+ * ========================================================================= */
+#wpadminbar {
+    background: #ff6701;
+}
+
+#wpadminbar #wp-admin-bar-custom-user-avatar > .ab-item {
+    padding: 0;
+    height: 32px;
+}
+
+#wpadminbar #wp-admin-bar-custom-user-avatar .ab-item-avatar img {
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    margin-top: 4px;
+    vertical-align: top;
+}
+
+#wp-admin-bar-top-secondary {
+    display: none;
+}
+
+/* =========================================================================
+ * 6. USER PROFILE PAGE STYLING
+ * ========================================================================= */
+#your-profile .user-rich-editing-wrap,
+#your-profile .user-syntax-highlighting-wrap,
+#your-profile .user-admin-color-wrap,
+#your-profile .user-comment-shortcuts-wrap,
+#your-profile .user-admin-bar-front-wrap,
+#your-profile .user-language-wrap,
+#your-profile h2:first-of-type,
+#your-profile h3:first-of-type {
+    display: none;
+}
+
+.custom-profile-image-section {
+    background: #fff;
+    padding: 20px;
+    margin-bottom: 30px;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.custom-profile-image-section h3 {
+    color: #0084b4;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+    margin-top: 0;
+}
+
+/* =========================================================================
+ * 7. LEADERBOARD WIDGET STYLING
+ * ========================================================================= */
+.writer-leaderboard-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.leaderboard-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.2s ease;
+}
+
+.leaderboard-item:last-child {
+    border-bottom: none;
+}
+
+.leaderboard-item:hover {
+    background-color: #f9f9f9;
+}
+
+.leaderboard-avatar img {
+    border-radius: 50%;
+    margin-right: 15px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.leaderboard-info {
+    flex-grow: 1;
+}
+
+.leaderboard-info strong {
+    display: block;
+    font-size: 1.1em;
+    margin-bottom: 3px;
+}
+
+.leaderboard-info .post-count {
+    display: block;
+    color: #666;
+    font-size: 0.9em;
+}
+
+.win-sticker {
+    font-size: 1.5em;
+    vertical-align: middle;
+    margin-left: 10px;
+    flex-shrink: 0;
+}
+
+/* =========================================================================
+ * 8. DASHBOARD WIDGETS
+ * ========================================================================= */
+#custom_welcome_widget h3 {
+    color: #0084b4;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+    margin-top: 0;
+}
+
+#custom_welcome_widget ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+#custom_welcome_widget li {
+    margin: 8px 0;
+}
+
+#custom_welcome_widget a {
+    color: #0073aa;
+    text-decoration: none;
+}
+
+#custom_welcome_widget a:hover {
+    text-decoration: underline;
+}
+
+/* =========================================================================
+ * 9. FOOTER STYLING
+ * ========================================================================= */
+#wp-footer-text {
+    color: #2c3e50;
+}
+
+#wp-footer-text a {
+    color: #0073aa;
+    text-decoration: none;
+}
+
+#wp-footer-text a:hover {
+    text-decoration: underline;
+}
+
+/* =========================================================================
+ * 10. RESPONSIVE & ACCESSIBILITY
+ * ========================================================================= */
+@media (max-width: 782px) {
+    #adminmenuwrap .custom-sidebar-profile .profile-avatar img {
+        width: 80px;
+        height: 80px;
+    }
+
+    #adminmenu,
+    #adminmenu .wp-submenu,
+    #adminmenuback,
+    #adminmenuwrap {
+        width: 100%;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: more) {
+    #adminmenu li:hover div.wp-menu-image:before {
+        color: #ffffff;
+    }
+
+    .custom-logout-btn {
+        border: 2px solid #ffffff;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    #adminmenuwrap .custom-sidebar-profile .profile-link,
+    #adminmenuwrap .custom-sidebar-profile .profile-avatar img,
+    .custom-logout-btn {
+        transition: none;
+    }
+}
+
+/* =========================================================================
+ * 11. Post Tab Issues 
+ * ========================================================================= */
+ .fl-tabs-panel {
+    animation-delay: 0.1s;
+}
