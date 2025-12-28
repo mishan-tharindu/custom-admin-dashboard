@@ -655,3 +655,74 @@ function custom_time_elapsed_styles() {
     </style>';
 }
 add_action('wp_head', 'custom_time_elapsed_styles');
+
+
+// ============================================================================
+// 15. Post Table Column Styling
+// ============================================================================
+/**
+ * Add post status column styling in admin post list.
+ */
+// Step 1: Add the column header
+add_filter( 'manage_posts_columns', 'add_post_status_column' );
+function add_post_status_column( $columns ) {
+    $columns['post_status_custom'] = 'Post Status';
+    return $columns;
+}
+
+// Step 2: Make the column sortable (optional)
+add_filter( 'manage_edit-post_sortable_columns', 'make_post_status_sortable' );
+function make_post_status_sortable( $columns ) {
+    $columns['post_status_custom'] = 'post_status';
+    return $columns;
+}
+
+// Step 3: Display content in the column with colored buttons
+add_action( 'manage_posts_custom_column', 'display_post_status_column', 10, 2 );
+function display_post_status_column( $column, $post_id ) {
+    if ( $column === 'post_status_custom' ) {
+        $post = get_post( $post_id );
+        $post_url = get_edit_post_link( $post_id );
+        $status = $post->post_status;
+
+        // Determine button color and text based on post status
+        if ( $status === 'publish' ) {
+            $button_class = 'status-approved';
+            $button_text = 'Approved';
+            $bg_color = '#4CAF50'; // Green
+        } elseif ( $status === 'draft' ) {
+            $button_class = 'status-review';
+            $button_text = 'Under Review';
+            $bg_color = '#FFC107'; // Yellow
+        } else {
+            $button_class = 'status-other';
+            $button_text = ucfirst( $status );
+            $bg_color = '#9E9E9E'; // Gray
+        }
+
+        // Output the button
+        echo sprintf(
+            '<a href="%s" class="button %s" style="background-color: %s; color: %s; padding: 5px 10px; border-radius: 3px; text-decoration: none; display: inline-block; border: none;">%s</a>',
+            esc_url( $post_url ),
+            esc_attr( $button_class ),
+            esc_attr( $bg_color ),
+            $status === 'draft' ? '#000' : '#fff',
+            esc_html( $button_text )
+        );
+    }
+}
+
+// Step 4: Add custom CSS for better styling
+add_action( 'admin_head', 'add_post_status_column_styles' );
+function add_post_status_column_styles() {
+    echo '<style>
+        .status-approved, .status-review, .status-other {
+            font-weight: bold !important;
+            cursor: pointer !important;
+            transition: opacity 0.3s ease !important;
+        }
+        .status-approved:hover, .status-review:hover, .status-other:hover {
+            opacity: 0.8 !important;
+        }
+    </style>';
+}
