@@ -70,7 +70,12 @@ function custom_admin_sidebar_profile()
     }
 
     $profile_url = admin_url('profile.php');
-    $logout_url = wp_logout_url(admin_url());
+    // Get the custom login page URL
+    $login_page = get_page_by_title('User Login');
+    $redirect_target = $login_page ? get_page_link($login_page->ID) : home_url();
+
+    // Generate logout URL that redirects to the custom login page
+    $logout_url = wp_logout_url($redirect_target);
 
     // Sanitize and escape data
     $avatar = esc_url($avatar);
@@ -788,7 +793,7 @@ function custom_auth_create_pages()
         ));
     }
 
-        // Create Custom 404 Page
+    // Create Custom 404 Page
     if (!$not_found_page) {
         wp_insert_post(array(
             'post_title' => 'Page Not Found',
@@ -844,7 +849,7 @@ function custom_404_template($template)
 {
     if (is_404()) {
         $not_found_page = get_page_by_title('Page Not Found');
-        
+
         if ($not_found_page && $not_found_page->post_status === 'publish') {
             // Make WordPress think this is a regular page
             global $wp_query;
@@ -858,10 +863,10 @@ function custom_404_template($template)
             $wp_query->post_count = 1;
             $wp_query->found_posts = 1;
             $wp_query->max_num_pages = 1;
-            
+
             // Set 404 status header
             status_header(404);
-            
+
             // Use the page template
             $page_template = get_page_template();
             if ($page_template) {
@@ -869,7 +874,7 @@ function custom_404_template($template)
             }
         }
     }
-    
+
     return $template;
 }
 add_filter('template_include', 'custom_404_template', 99);
@@ -881,17 +886,19 @@ function prevent_404_page_from_404($posts, $query)
 {
     if ($query->is_main_query() && !is_admin()) {
         $not_found_page = get_page_by_title('Page Not Found');
-        
+
         if ($not_found_page && empty($posts) && $query->is_page) {
             $page_slug = $query->get('pagename');
-            
-            if ($page_slug === $not_found_page->post_name || 
-                $page_slug === sanitize_title('Page Not Found')) {
+
+            if (
+                $page_slug === $not_found_page->post_name ||
+                $page_slug === sanitize_title('Page Not Found')
+            ) {
                 return array($not_found_page);
             }
         }
     }
-    
+
     return $posts;
 }
 add_filter('the_posts', 'prevent_404_page_from_404', 10, 2);
@@ -905,19 +912,19 @@ add_filter('the_posts', 'prevent_404_page_from_404', 10, 2);
 function check_auth_page_exists($page_title)
 {
     $page = get_page_by_title($page_title);
-    
+
     if (!$page) {
         // Log the error for debugging
         error_log('Missing required page: ' . $page_title . ' (Auth Plugin)');
-        
+
         // Redirect to custom 404 page
         $not_found_page = get_page_by_title('Page Not Found');
-        
+
         if ($not_found_page) {
             wp_redirect(get_page_link($not_found_page->ID));
             exit;
         }
-        
+
         // Fallback: Trigger WordPress 404
         global $wp_query;
         $wp_query->set_404();
@@ -925,7 +932,7 @@ function check_auth_page_exists($page_title)
         get_template_part('404');
         exit;
     }
-    
+
     return $page;
 }
 
@@ -984,7 +991,7 @@ function custom_login_form_shortcode()
     $signup_link = esc_url(get_page_link($signup_page->ID));
 
     ob_start();
-    ?>
+?>
     <div class="custom-auth-container">
         <div class="auth-form-wrapper">
             <h2 class="auth-form-title">Sign In</h2>
@@ -1007,8 +1014,7 @@ function custom_login_form_shortcode()
                         class="form-control"
                         placeholder="Enter your username or email"
                         required
-                        value="<?php echo isset($_POST['username']) ? esc_attr($_POST['username']) : ''; ?>"
-                    >
+                        value="<?php echo isset($_POST['username']) ? esc_attr($_POST['username']) : ''; ?>">
                 </div>
 
                 <div class="form-group">
@@ -1019,8 +1025,7 @@ function custom_login_form_shortcode()
                         name="password"
                         class="form-control"
                         placeholder="Enter your password"
-                        required
-                    >
+                        required>
                 </div>
 
                 <div class="checkbox-group form-group">
@@ -1042,7 +1047,7 @@ function custom_login_form_shortcode()
             </div>
         </div>
     </div>
-    <?php
+<?php
     return ob_get_clean();
 }
 add_shortcode('custom_login_form', 'custom_login_form_shortcode');
@@ -1150,7 +1155,7 @@ function custom_signup_form_shortcode()
     $login_link = esc_url(get_page_link($login_page->ID));
 
     ob_start();
-    ?>
+?>
     <div class="custom-auth-container">
         <div class="auth-form-wrapper">
             <h2 class="auth-form-title">Create Account</h2>
@@ -1174,8 +1179,7 @@ function custom_signup_form_shortcode()
                             class="form-control"
                             placeholder="First Name"
                             required
-                            value="<?php echo isset($_POST['first_name']) ? esc_attr($_POST['first_name']) : ''; ?>"
-                        >
+                            value="<?php echo isset($_POST['first_name']) ? esc_attr($_POST['first_name']) : ''; ?>">
                     </div>
 
                     <div class="form-group form-group-half">
@@ -1186,8 +1190,7 @@ function custom_signup_form_shortcode()
                             name="last_name"
                             class="form-control"
                             placeholder="Last Name"
-                            value="<?php echo isset($_POST['last_name']) ? esc_attr($_POST['last_name']) : ''; ?>"
-                        >
+                            value="<?php echo isset($_POST['last_name']) ? esc_attr($_POST['last_name']) : ''; ?>">
                     </div>
                 </div>
 
@@ -1200,8 +1203,7 @@ function custom_signup_form_shortcode()
                         class="form-control"
                         placeholder="Choose a username"
                         required
-                        value="<?php echo isset($_POST['username']) ? esc_attr($_POST['username']) : ''; ?>"
-                    >
+                        value="<?php echo isset($_POST['username']) ? esc_attr($_POST['username']) : ''; ?>">
                     <small class="form-text"><?php esc_html_e('At least 3 characters', 'custom-user-auth'); ?></small>
                 </div>
 
@@ -1214,8 +1216,7 @@ function custom_signup_form_shortcode()
                         class="form-control"
                         placeholder="your@email.com"
                         required
-                        value="<?php echo isset($_POST['email']) ? esc_attr($_POST['email']) : ''; ?>"
-                    >
+                        value="<?php echo isset($_POST['email']) ? esc_attr($_POST['email']) : ''; ?>">
                 </div>
 
                 <div class="form-group">
@@ -1226,8 +1227,7 @@ function custom_signup_form_shortcode()
                         name="password"
                         class="form-control"
                         placeholder="At least 8 characters"
-                        required
-                    >
+                        required>
                     <small class="form-text"><?php esc_html_e('Minimum 8 characters', 'custom-user-auth'); ?></small>
                 </div>
 
@@ -1239,8 +1239,7 @@ function custom_signup_form_shortcode()
                         name="password_confirm"
                         class="form-control"
                         placeholder="Confirm your password"
-                        required
-                    >
+                        required>
                 </div>
 
                 <button type="submit" class="btn-block btn btn-primary"><?php esc_html_e('Create Account', 'custom-user-auth'); ?></button>
@@ -1251,7 +1250,7 @@ function custom_signup_form_shortcode()
             </div>
         </div>
     </div>
-    <?php
+<?php
     return ob_get_clean();
 }
 add_shortcode('custom_signup_form', 'custom_signup_form_shortcode');
@@ -1277,7 +1276,22 @@ add_action('wp_enqueue_scripts', 'custom_auth_enqueue_styles');
 
 function custom_login_page_redirect()
 {
-    if (strpos($_SERVER['REQUEST_URI'], '/wp-login.php') !== false && !is_admin()) {
+    $request_uri = $_SERVER['REQUEST_URI'];
+
+    // Check if we are visiting wp-login.php
+    if (strpos($request_uri, 'wp-login.php') !== false && !is_admin()) {
+
+        // 1. ALLOW LOGOUT: If the action is logout, do not redirect. Let WP handle it.
+        if (isset($_GET['action']) && $_GET['action'] === 'logout') {
+            return;
+        }
+
+        // 2. ALLOW POST REQUESTS: (Optional but good for compatibility)
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            return;
+        }
+
+        // 3. Otherwise, redirect to custom login page
         $login_page = get_page_by_title('User Login');
         if ($login_page) {
             wp_redirect(get_page_link($login_page->ID));
@@ -1293,8 +1307,15 @@ add_action('init', 'custom_login_page_redirect');
 
 function custom_logout_redirect($redirect_to, $requested_redirect_to, $user)
 {
-    $home = home_url();
-    return $home;
+    // Redirect to the Custom Login Page instead of Home
+    $login_page = get_page_by_title('User Login');
+
+    if ($login_page) {
+        return get_page_link($login_page->ID);
+    }
+
+    // Fallback to home if page doesn't exist
+    return home_url();
 }
 add_filter('logout_redirect', 'custom_logout_redirect', 10, 3);
 
@@ -1304,7 +1325,14 @@ add_filter('logout_redirect', 'custom_logout_redirect', 10, 3);
 
 function restrict_wp_login()
 {
+    // Check if we are on wp-login.php
     if (strpos($_SERVER['REQUEST_URI'], '/wp-login.php') !== false && !is_admin() && !defined('DOING_CRON')) {
+
+        // CRITICAL FIX: Allow the logout action to pass through
+        if (isset($_GET['action']) && $_GET['action'] === 'logout') {
+            return;
+        }
+
         $login_page = get_page_by_title('User Login');
         if ($login_page) {
             wp_redirect(get_page_link($login_page->ID));
