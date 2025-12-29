@@ -3,6 +3,13 @@
  * ========================================================================= */
 
 /* =========================================================================
+* 01. Hide default WordPress dashboard widgets
+* ========================================================================= */
+div#ogf-rss-feed {
+    display: none !important;
+}
+
+/* =========================================================================
  * 1. SIDEBAR PROFILE HEADER (Top of Sidebar)
  * ========================================================================= */
 #adminmenuwrap .custom-sidebar-profile {
@@ -179,22 +186,22 @@
 #adminmenu .wp-submenu a:focus,
 #adminmenu .wp-submenu a:hover,
 #adminmenu a:hover,
-#adminmenu li.menu-top > a:focus {
+#adminmenu li.menu-top>a:focus {
     color: white;
     background: #0084b4;
 }
 
 #adminmenu li.menu-top:hover,
-#adminmenu li.opensub > a.menu-top,
-#adminmenu li > a.menu-top:focus {
+#adminmenu li.opensub>a.menu-top,
+#adminmenu li>a.menu-top:focus {
     position: relative;
     background-color: #0084b4;
     color: white;
 }
 
 #adminmenu li.menu-top:hover,
-#adminmenu li.opensub > a.menu-top,
-#adminmenu li > a.menu-top:focus {
+#adminmenu li.opensub>a.menu-top,
+#adminmenu li>a.menu-top:focus {
     box-shadow: inset 4px 0 0 0 white;
     transition: box-shadow 0.1s linear;
 }
@@ -339,7 +346,7 @@
     background: #ff6701;
 }
 
-#wpadminbar #wp-admin-bar-custom-user-avatar > .ab-item {
+#wpadminbar #wp-admin-bar-custom-user-avatar>.ab-item {
     padding: 0;
     height: 32px;
 }
@@ -484,8 +491,9 @@
     text-decoration: underline;
 }
 
+
 /* =========================================================================
- * 10. RESPONSIVE & ACCESSIBILITY
+ * 11. RESPONSIVE & ACCESSIBILITY
  * ========================================================================= */
 @media (max-width: 782px) {
     #adminmenuwrap .custom-sidebar-profile .profile-avatar img {
@@ -514,6 +522,7 @@
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
+
     #adminmenuwrap .custom-sidebar-profile .profile-link,
     #adminmenuwrap .custom-sidebar-profile .profile-avatar img,
     .custom-logout-btn {
