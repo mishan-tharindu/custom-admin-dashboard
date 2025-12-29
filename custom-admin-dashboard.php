@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Custom Admin Dashboard
  * Description: A custom plugin to modify and clean up the WordPress admin dashboard. [wwmt_time_ago] or [wwmt_time_ago icon="clock"]
- * Version: 1.7.7
+ * Version: 1.7.8
  * Author: TechM
  * Author URI: https://yourwebsite.com
  * Text Domain: custom-admin-dashboard
@@ -70,7 +70,8 @@ function custom_admin_sidebar_profile()
     }
 
     $profile_url = admin_url('profile.php');
-    // Get the custom login page URL
+    
+    // Get the custom login page URL for logout redirect
     $login_page = get_page_by_title('User Login');
     $redirect_target = $login_page ? get_page_link($login_page->ID) : home_url();
 
@@ -426,14 +427,11 @@ function my_plugin_settings_page()
 }
 
 // ============================================================================
-// 12. POST IMAGE COUNT SHORTCODE
+// 11. POST IMAGE COUNT SHORTCODE
 // ============================================================================
 /**
  * Custom function to count the number of <img> tags in a post's content.
  * Usage: [post_image_count]
- *
- * @param array $atts Shortcode attributes (unused).
- * @return string The count of images in the post.
  */
 function custom_post_image_count_shortcode($atts)
 {
@@ -456,7 +454,7 @@ function custom_post_image_count_shortcode($atts)
 add_shortcode('post_image_count', 'custom_post_image_count_shortcode');
 
 // ============================================================================
-// 11. POST TIME ELAPSED FUNCTION (IMPROVED)
+// 12. POST TIME ELAPSED FUNCTION
 // ============================================================================
 /**
  * Calculate and display time elapsed since post was published.
@@ -528,11 +526,10 @@ add_shortcode('wwmt_time_ago', 'wwmt_time_ago_shortcode');
 
 
 // ============================================================================
-// 13. BEAVER BUILDER META INJECTION - DIRECT HTML APPROACH
+// 13. BEAVER BUILDER META INJECTION (JS)
 // ============================================================================
 /**
  * Inject time elapsed into Beaver Builder post grids using JavaScript.
- * This adds the time to the meta section directly in the HTML.
  */
 function inject_time_elapsed_bb_javascript()
 {
@@ -580,11 +577,10 @@ add_action('wp_footer', 'inject_time_elapsed_bb_javascript', 999);
 
 
 // ============================================================================
-// ALTERNATIVE: Hook into Beaver Builder Template System
+// 14. BEAVER BUILDER META INJECTION (FILTER)
 // ============================================================================
 /**
- * More direct approach - inject into Beaver Builder post grid template.
- * This modifies the actual template output.
+ * Alternative approach - Hook into Beaver Builder Template System
  */
 function cda_add_time_ago_to_bb_templates()
 {
@@ -619,7 +615,7 @@ add_filter('fl_builder_post_grid_meta', function ($meta) {
         return $meta;
     }
 
-    $time_ago = wwmt_calculate_time_ago($post->ID);
+    $time_ago = wwmt_calculate_time_ago($post->ID); // Note: Function name fix in your original logic needed? wwmt_time_ago()
 
     if (!empty($time_ago)) {
         $meta .= ' | <span class="custom-time-ago"><i class="far fa-clock"></i> ' . esc_html($time_ago) . ' ago</span>';
@@ -630,7 +626,7 @@ add_filter('fl_builder_post_grid_meta', function ($meta) {
 
 
 // ============================================================================
-// 14. CSS STYLING FOR TIME ELAPSED
+// 15. CSS STYLING FOR TIME ELAPSED
 // ============================================================================
 /**
  * Add custom styling for the time elapsed display.
@@ -685,7 +681,7 @@ add_action('wp_head', 'custom_time_elapsed_styles');
 
 
 // ============================================================================
-// 15. Post Table Column Styling
+// 16. POST TABLE COLUMN STYLING
 // ============================================================================
 /**
  * Add post status column styling in admin post list.
@@ -760,7 +756,7 @@ function add_post_status_column_styles()
 }
 
 // ============================================================================
-// 1. CREATE CUSTOM LOGIN & REGISTRATION PAGES
+// 17. CREATE CUSTOM LOGIN & REGISTRATION PAGES
 // ============================================================================
 
 /**
@@ -807,38 +803,22 @@ function custom_auth_create_pages()
 register_activation_hook(__FILE__, 'custom_auth_create_pages');
 
 // ============================================================================
-// CUSTOM 404 PAGE CONTENT
+// 18. CUSTOM 404 PAGE CONTENT & TEMPLATE LOGIC
 // ============================================================================
 
 function custom_get_404_page_content()
 {
-    return '<!-- wp:heading -->
-<h1>Page Not Found</h1>
-<!-- /wp:heading -->
-
-<!-- wp:paragraph -->
+    return '<h1>Page Not Found</h1>
 <p>Sorry, the page you are looking for could not be found. It may have been moved or deleted.</p>
-<!-- /wp:paragraph -->
-
-<!-- wp:paragraph -->
 <p><a href="' . esc_url(home_url()) . '" class="button button-primary">Back to Home</a></p>
-<!-- /wp:paragraph -->
-
-<!-- wp:paragraph -->
 <p><strong>What happened?</strong></p>
-<!-- /wp:paragraph -->
-
-<!-- wp:list -->
 <ul>
 <li>The page might have been deleted</li>
 <li>The URL might be incorrect</li>
 <li>You might not have permission to view this page</li>
 </ul>
-<!-- /wp:list -->
-
-<!-- wp:paragraph -->
 <p>Please check the URL and try again, or use the navigation menu to find what you are looking for.</p>
-<!-- /wp:paragraph -->';
+';
 }
 
 /**
@@ -904,11 +884,10 @@ function prevent_404_page_from_404($posts, $query)
 add_filter('the_posts', 'prevent_404_page_from_404', 10, 2);
 
 
-
 // ============================================================================
-// HELPER FUNCTION: Check if auth pages exist and redirect if missing
+// 19. AUTH HELPER FUNCTION
 // ============================================================================
-
+// Check if auth pages exist and redirect if missing
 function check_auth_page_exists($page_title)
 {
     $page = get_page_by_title($page_title);
@@ -937,7 +916,7 @@ function check_auth_page_exists($page_title)
 }
 
 // ============================================================================
-// 2. CUSTOM LOGIN FORM SHORTCODE (FIXED)
+// 20. CUSTOM LOGIN FORM SHORTCODE
 // ============================================================================
 
 function custom_login_form_shortcode()
@@ -1053,7 +1032,7 @@ function custom_login_form_shortcode()
 add_shortcode('custom_login_form', 'custom_login_form_shortcode');
 
 // ============================================================================
-// 3. CUSTOM SIGNUP FORM SHORTCODE (FIXED)
+// 21. CUSTOM SIGNUP FORM SHORTCODE
 // ============================================================================
 
 function custom_signup_form_shortcode()
@@ -1256,7 +1235,7 @@ function custom_signup_form_shortcode()
 add_shortcode('custom_signup_form', 'custom_signup_form_shortcode');
 
 // ============================================================================
-// 4. ENQUEUE STYLES AND SCRIPTS
+// 22. ENQUEUE AUTH STYLES
 // ============================================================================
 
 function custom_auth_enqueue_styles()
@@ -1271,7 +1250,7 @@ function custom_auth_enqueue_styles()
 add_action('wp_enqueue_scripts', 'custom_auth_enqueue_styles');
 
 // ============================================================================
-// 5. REDIRECT WP-LOGIN TO CUSTOM LOGIN PAGE
+// 23. REDIRECT WP-LOGIN TO CUSTOM LOGIN PAGE
 // ============================================================================
 
 function custom_login_page_redirect()
@@ -1302,7 +1281,7 @@ function custom_login_page_redirect()
 add_action('init', 'custom_login_page_redirect');
 
 // ============================================================================
-// 6. CUSTOM LOGOUT REDIRECT
+// 24. CUSTOM LOGOUT REDIRECT
 // ============================================================================
 
 function custom_logout_redirect($redirect_to, $requested_redirect_to, $user)
@@ -1320,7 +1299,7 @@ function custom_logout_redirect($redirect_to, $requested_redirect_to, $user)
 add_filter('logout_redirect', 'custom_logout_redirect', 10, 3);
 
 // ============================================================================
-// 7. RESTRICT DIRECT ACCESS TO WP-LOGIN
+// 25. RESTRICT DIRECT ACCESS TO WP-LOGIN
 // ============================================================================
 
 function restrict_wp_login()
@@ -1343,7 +1322,7 @@ function restrict_wp_login()
 add_action('init', 'restrict_wp_login', 1);
 
 // ============================================================================
-// 8. ADD USER ROLE SETTINGS
+// 26. DEFAULT USER ROLE SETTINGS
 // ============================================================================
 
 function custom_auth_default_user_role()
@@ -1353,7 +1332,7 @@ function custom_auth_default_user_role()
 add_filter('default_user_role', 'custom_auth_default_user_role');
 
 // ============================================================================
-// 9. CUSTOM PROFILE REDIRECT
+// 27. CUSTOM PROFILE REDIRECT
 // ============================================================================
 
 function redirect_after_profile_update($user_id)
@@ -1366,7 +1345,7 @@ function redirect_after_profile_update($user_id)
 add_action('profile_update', 'redirect_after_profile_update');
 
 // ============================================================================
-// 14. HIDE ADMIN BAR FOR NON-ADMINISTRATORS
+// 28. HIDE ADMIN BAR FOR NON-ADMINISTRATORS
 // ============================================================================
 
 function custom_hide_admin_bar_for_non_admin()
