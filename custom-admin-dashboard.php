@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Custom Admin Dashboard
  * Description: A custom plugin to modify and clean up the WordPress admin dashboard. [wwmt_time_ago] or [wwmt_time_ago icon="clock"]
- * Version: 1.7.8
+ * Version: 1.7.29
  * Author: TechM
  * Author URI: https://yourwebsite.com
  * Text Domain: custom-admin-dashboard
@@ -276,62 +276,61 @@ function custom_website_stats_content()
 function custom_admin_styles($hook)
 {
     // Enqueue Font Awesome
-    wp_enqueue_style(
-        'font-awesome',
-        'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
-        array(),
-        '6.5.1'
-    );
+    wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css', array(), '6.5.1');
 
-    // Load custom admin style with cache busting
+    // Load custom admin style
     $css_file = plugin_dir_path(__FILE__) . 'admin-style.css';
     $version = file_exists($css_file) ? filemtime($css_file) : '1.0.0';
+    wp_enqueue_style('custom-admin-style', plugins_url('admin-style.css', __FILE__), array(), $version);
 
-    wp_enqueue_style(
-        'custom-admin-style',
-        plugins_url('admin-style.css', __FILE__),
-        array(),
-        $version
-    );
+    // CHECK: Is this the Profile Page OR our Custom Plugin Settings Page?
+    // Note: 'toplevel_page_my-plugin-slug' is the hook for your settings page
+    if ('profile.php' === $hook || 'user-edit.php' === $hook || 'toplevel_page_my-plugin-slug' === $hook) {
+        
+        wp_enqueue_media(); // Load WordPress Media Uploader
 
-    // Enqueue Media Uploader only on Profile pages
-    if ('profile.php' === $hook || 'user-edit.php' === $hook) {
-        wp_enqueue_media();
-
+        // Javascript to handle the Image Uploader
         $js_code = "
             jQuery(document).ready(function($) {
-                var \$profileSection = $('.custom-profile-image-section');
-                if (\$profileSection.length) {
-                    $('#your-profile').prepend(\$profileSection);
+                
+                // Generic function to handle image upload
+                function setupMediaUploader(btnId, inputId, previewId, removeBtnId) {
+                    var frame;
+                    $(btnId).on('click', function(e) {
+                        e.preventDefault();
+                        if (frame) { frame.open(); return; }
+                        
+                        frame = wp.media({
+                            title: '" . esc_js(__('Select Image', 'custom-admin-dashboard')) . "',
+                            button: { text: '" . esc_js(__('Use this image', 'custom-admin-dashboard')) . "' },
+                            multiple: false
+                        });
+
+                        frame.on('select', function() {
+                            var attachment = frame.state().get('selection').first().toJSON();
+                            $(inputId).val(attachment.id);
+                            $(previewId).html('<img src=\"'+attachment.url+'\" style=\"max-width: 150px; height: auto; border: 2px solid #ccc;\">');
+                            $(removeBtnId).show();
+                        });
+                        frame.open();
+                    });
+
+                    $(removeBtnId).on('click', function() {
+                        $(inputId).val('');
+                        $(previewId).empty();
+                        $(this).hide();
+                    });
                 }
 
-                var frame;
-                $('#custom_avatar_button').on('click', function(e) {
-                    e.preventDefault();
-                    if (frame) {
-                        frame.open();
-                        return;
-                    }
-                    frame = wp.media({
-                        title: '" . esc_js(__('Select Profile Image', 'custom-admin-dashboard')) . "',
-                        button: { text: '" . esc_js(__('Use this image', 'custom-admin-dashboard')) . "' },
-                        multiple: false
-                    });
-                    frame.on('select', function() {
-                        var attachment = frame.state().get('selection').first().toJSON();
-                        $('#custom_avatar_id').val(attachment.id);
-                        $('#custom_avatar_preview').html('<img src=\"'+attachment.url+'\" style=\"width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid #ccc;\">');
-                        $('#custom_avatar_remove').show();
-                    });
-                    frame.open();
-                });
+                // Initialize for User Profile (Your existing code)
+                setupMediaUploader('#custom_avatar_button', '#custom_avatar_id', '#custom_avatar_preview', '#custom_avatar_remove');
                 
-                $('#custom_avatar_remove').on('click', function() {
-                    $('#custom_avatar_id').val('');
-                    $('#custom_avatar_preview').empty();
-                    $(this).hide();
-                });
-                
+                // Initialize for Plugin Settings (New code)
+                setupMediaUploader('#cad_def_img_btn', '#cad_default_featured_image', '#cad_def_img_preview', '#cad_def_img_remove');
+
+                // Move profile section if it exists
+                var \$profileSection = $('.custom-profile-image-section');
+                if (\$profileSection.length) { $('#your-profile').prepend(\$profileSection); }
                 $('.user-profile-picture').closest('tr').hide();
             });
         ";
@@ -382,12 +381,11 @@ function custom_enqueue_chart_scripts($hook)
 add_action('admin_enqueue_scripts', 'custom_enqueue_chart_scripts');
 
 // ============================================================================
-// 10. CUSTOM PLUGIN MENU
+// 10. CUSTOM PLUGIN MENU & SETTINGS
 // ============================================================================
 add_action('admin_menu', 'my_custom_plugin_menu');
 
-function my_custom_plugin_menu()
-{
+function my_custom_plugin_menu() {
     add_menu_page(
         'My Plugin Settings',
         'Custom Plugin',
@@ -397,33 +395,55 @@ function my_custom_plugin_menu()
         'dashicons-admin-generic',
         6
     );
-
-    add_submenu_page(
-        'my-plugin-slug',
-        'General Settings',
-        'Settings',
-        'manage_options',
-        'my-plugin-slug',
-        'my_plugin_settings_page'
-    );
 }
 
-function my_plugin_settings_page()
-{
+// Register the setting so WordPress saves it automatically
+function cad_register_settings() {
+    register_setting('cad_plugin_options_group', 'cad_default_featured_image');
+}
+add_action('admin_init', 'cad_register_settings');
+
+function my_plugin_settings_page() {
     if (!current_user_can('manage_options')) {
         wp_die(esc_html__('You do not have permission to access this page.', 'custom-admin-dashboard'));
     }
-?>
+
+    // Get the saved image ID
+    $default_image_id = get_option('cad_default_featured_image');
+    $image_url = $default_image_id ? wp_get_attachment_url($default_image_id) : '';
+    ?>
     <div class="wrap">
         <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
-        <p><?php esc_html_e('Welcome to your custom plugin settings page!', 'custom-admin-dashboard'); ?></p>
-        <form method="post" action="options.php">
-            <?php
-            // Your settings fields go here
-            ?>
+        
+        <form method="post" action="options.php" style="background: #fff; padding: 20px; border: 1px solid #ccd0d4; max-width: 800px; margin-top: 20px;">
+            <?php settings_fields('cad_plugin_options_group'); ?>
+            <?php do_settings_sections('cad_plugin_options_group'); ?>
+            
+            <h2>Default Post Image</h2>
+            <p>Select an image to use as the Featured Image for posts that don't have one set.</p>
+            
+            <table class="form-table">
+                <tr valign="top">
+                    <th scope="row">Default Placeholder</th>
+                    <td>
+                        <div id="cad_def_img_preview" style="margin-bottom: 10px;">
+                            <?php if ($image_url) : ?>
+                                <img src="<?php echo esc_url($image_url); ?>" style="max-width: 150px; height: auto; border: 2px solid #ccc;">
+                            <?php endif; ?>
+                        </div>
+
+                        <input type="hidden" name="cad_default_featured_image" id="cad_default_featured_image" value="<?php echo esc_attr($default_image_id); ?>">
+                        
+                        <button type="button" class="button button-secondary" id="cad_def_img_btn">Select Image</button>
+                        <button type="button" class="button button-link-delete" id="cad_def_img_remove" style="<?php echo $default_image_id ? '' : 'display:none;'; ?>">Remove Image</button>
+                    </td>
+                </tr>
+            </table>
+
+            <?php submit_button(); ?>
         </form>
     </div>
-<?php
+    <?php
 }
 
 // ============================================================================
@@ -480,21 +500,21 @@ function wwmt_time_ago()
 
     // Return appropriate time format
     if ($time_diff < 60) {
-        return esc_html(floor($time_diff) . ' sec');
+        return esc_html(floor($time_diff) . ' sec ago');
     }
     if ($time_diff < 3600) {
-        return esc_html(floor($time_diff / 60) . ' min');
+        return esc_html(floor($time_diff / 60) . ' min ago');
     }
     if ($time_diff < 86400) {
-        return esc_html(floor($time_diff / 3600) . ' hour');
+        return esc_html(floor($time_diff / 3600) . ' hour ago');
     }
     if ($time_diff < 604800) {
-        return esc_html(floor($time_diff / 86400) . ' day');
+        return esc_html(floor($time_diff / 86400) . ' day ago');
     }
     if ($time_diff < 2592000) {
-        return esc_html(floor($time_diff / 604800) . ' week');
+        return esc_html(floor($time_diff / 604800) . ' week ago');
     }
-    return esc_html(floor($time_diff / 2592000) . ' month');
+    return esc_html(floor($time_diff / 2592000) . ' month ago');
 }
 
 // Shortcode usage: [wwmt_time_ago] or [wwmt_time_ago icon="clock"]
@@ -1362,3 +1382,33 @@ function custom_hide_admin_bar_for_non_admin()
     }
 }
 add_action('init', 'custom_hide_admin_bar_for_non_admin');
+
+// ============================================================================
+// 29. AUTO-SET DEFAULT FEATURED IMAGE
+// ============================================================================
+function my_custom_plugin_set_default_thumbnail( $post_id ) {
+    
+    // 1. Check if autosave
+    if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+        return;
+    }
+
+    // 2. Check if post type is 'post' (change to 'page' or custom type if needed)
+    if ( get_post_type( $post_id ) !== 'post' ) {
+        return;
+    }
+
+    // 3. Check if the post already has a thumbnail
+    if ( has_post_thumbnail( $post_id ) ) {
+        return; 
+    }
+
+    // 4. GET DEFAULT IMAGE ID FROM SETTINGS
+    $default_thumbnail_id = get_option('cad_default_featured_image');
+
+    // 5. If an ID is set in settings, apply it
+    if ( !empty($default_thumbnail_id) ) {
+        update_post_meta( $post_id, '_thumbnail_id', $default_thumbnail_id );
+    }
+}
+add_action( 'save_post', 'my_custom_plugin_set_default_thumbnail' );
