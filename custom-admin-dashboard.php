@@ -2,8 +2,8 @@
 
 /**
  * Plugin Name: Custom Admin Dashboard
- * Description: A custom plugin to modify and clean up the WordPress admin dashboard. [wwmt_time_ago] or [wwmt_time_ago icon="clock"]
- * Version: 1.7.29
+ * Description: A custom plugin to modify and clean up the WordPress admin dashboard. [wwmt_time_ago] or [wwmt_time_ago icon="clock"], [post_image_count], [date_weather]
+ * Version: 1.7.30
  * Author: TechM
  * Author URI: https://yourwebsite.com
  * Text Domain: custom-admin-dashboard
@@ -1412,3 +1412,38 @@ function my_custom_plugin_set_default_thumbnail( $post_id ) {
     }
 }
 add_action( 'save_post', 'my_custom_plugin_set_default_thumbnail' );
+
+// ============================================================================
+// 30. Weather & Date Shortcode
+// ============================================================================
+
+function date_with_live_weather_shortcode() {
+
+    // 1️⃣ Get city by IP
+    $ip_response = wp_remote_get("http://ip-api.com/json/");
+    if (is_wp_error($ip_response)) return "Location unavailable";
+
+    $ip_data = json_decode(wp_remote_retrieve_body($ip_response), true);
+    $city = $ip_data['city'] ?? 'Colombo'; // fallback city
+
+    // 2️⃣ Weather API
+    $apiKey = "f524f4a3f66b684de434d97cabcd043c"; // OpenWeatherMap API key
+    $url = "https://api.openweathermap.org/data/2.5/weather?q=" . urlencode($city) . "&units=metric&appid=" . $apiKey;
+
+    $weather_response = wp_remote_get($url);
+    if (is_wp_error($weather_response)) return "Weather unavailable";
+
+    $weather_data = json_decode(wp_remote_retrieve_body($weather_response), true);
+    if (!isset($weather_data['main']['temp'])) return "Weather data error";
+
+    $temp = round($weather_data['main']['temp'], 1) . "°C";
+
+    // 3️⃣ Date
+    $date = date("l j F, Y");
+
+    // 4️⃣ Final output
+    return $temp . " " . $city . " — " . $date;
+}
+add_shortcode('date_weather', 'date_with_live_weather_shortcode');
+
+
