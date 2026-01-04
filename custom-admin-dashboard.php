@@ -70,7 +70,7 @@ function custom_admin_sidebar_profile()
     }
 
     $profile_url = admin_url('profile.php');
-    
+
     // Get the custom login page URL for logout redirect
     $login_page = get_page_by_title('User Login');
     $redirect_target = $login_page ? get_page_link($login_page->ID) : home_url();
@@ -286,7 +286,7 @@ function custom_admin_styles($hook)
     // CHECK: Is this the Profile Page OR our Custom Plugin Settings Page?
     // Note: 'toplevel_page_my-plugin-slug' is the hook for your settings page
     if ('profile.php' === $hook || 'user-edit.php' === $hook || 'toplevel_page_my-plugin-slug' === $hook) {
-        
+
         wp_enqueue_media(); // Load WordPress Media Uploader
 
         // Javascript to handle the Image Uploader
@@ -385,7 +385,8 @@ add_action('admin_enqueue_scripts', 'custom_enqueue_chart_scripts');
 // ============================================================================
 add_action('admin_menu', 'my_custom_plugin_menu');
 
-function my_custom_plugin_menu() {
+function my_custom_plugin_menu()
+{
     add_menu_page(
         'My Plugin Settings',
         'Custom Plugin',
@@ -398,12 +399,14 @@ function my_custom_plugin_menu() {
 }
 
 // Register the setting so WordPress saves it automatically
-function cad_register_settings() {
+function cad_register_settings()
+{
     register_setting('cad_plugin_options_group', 'cad_default_featured_image');
 }
 add_action('admin_init', 'cad_register_settings');
 
-function my_plugin_settings_page() {
+function my_plugin_settings_page()
+{
     if (!current_user_can('manage_options')) {
         wp_die(esc_html__('You do not have permission to access this page.', 'custom-admin-dashboard'));
     }
@@ -411,17 +414,17 @@ function my_plugin_settings_page() {
     // Get the saved image ID
     $default_image_id = get_option('cad_default_featured_image');
     $image_url = $default_image_id ? wp_get_attachment_url($default_image_id) : '';
-    ?>
+?>
     <div class="wrap">
         <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
-        
+
         <form method="post" action="options.php" style="background: #fff; padding: 20px; border: 1px solid #ccd0d4; max-width: 800px; margin-top: 20px;">
             <?php settings_fields('cad_plugin_options_group'); ?>
             <?php do_settings_sections('cad_plugin_options_group'); ?>
-            
+
             <h2>Default Post Image</h2>
             <p>Select an image to use as the Featured Image for posts that don't have one set.</p>
-            
+
             <table class="form-table">
                 <tr valign="top">
                     <th scope="row">Default Placeholder</th>
@@ -433,7 +436,7 @@ function my_plugin_settings_page() {
                         </div>
 
                         <input type="hidden" name="cad_default_featured_image" id="cad_default_featured_image" value="<?php echo esc_attr($default_image_id); ?>">
-                        
+
                         <button type="button" class="button button-secondary" id="cad_def_img_btn">Select Image</button>
                         <button type="button" class="button button-link-delete" id="cad_def_img_remove" style="<?php echo $default_image_id ? '' : 'display:none;'; ?>">Remove Image</button>
                     </td>
@@ -443,7 +446,7 @@ function my_plugin_settings_page() {
             <?php submit_button(); ?>
         </form>
     </div>
-    <?php
+<?php
 }
 
 // ============================================================================
@@ -474,58 +477,90 @@ function custom_post_image_count_shortcode($atts)
 add_shortcode('post_image_count', 'custom_post_image_count_shortcode');
 
 // ============================================================================
-// 12. POST TIME ELAPSED FUNCTION
+// 12. POST TIME ELAPSED FUNCTION - CLEAN VERSION
 // ============================================================================
 /**
  * Calculate and display time elapsed since post was published.
  */
-function wwmt_time_ago()
+function wwmt_time_ago($post_id = null)
 {
-    global $post;
-
-    // Ensure we have a valid post
-    if (!$post || !isset($post->ID)) {
-        return '';
+    // If no post_id provided, use global post
+    if ($post_id === null) {
+        global $post;
+        if (!$post || !isset($post->ID)) {
+            return '';
+        }
+        $post_id = $post->ID;
+        // $post_id = '124';
     }
 
-    // Get the post publication time
-    $post_date = get_post_time('U', false, $post->ID);
+    // Get the post publication time in UTC
+    $post_date = get_post_time('U', true, $post_id);
 
     if (!$post_date) {
         return '';
     }
 
-    // Calculate time difference
-    $time_diff = current_time('timestamp') - $post_date;
+    // Get Current Time in UTC to match post_date
+    $current_time = current_time('timestamp', true);
 
-    // Return appropriate time format
-    if ($time_diff < 60) {
-        return esc_html(floor($time_diff) . ' sec ago');
+    // Calculate time difference
+    $time_diff = $current_time - $post_date;
+
+    // Define time constants
+    $minute = 60;
+    $hour   = 3600;
+    $day    = 86400;
+    $week   = 604800;
+    $month  = 2592000;  // ~30 days
+    $year   = 31536000; // ~365 days
+
+    // Logic Tree
+    $output = '';
+
+    if ($time_diff < $minute) {
+        $count = floor($time_diff);
+        $output = ($count <= 1) ? 'just now' : $count . ' sec ago';
+    } elseif ($time_diff < $hour) {
+        $count = floor($time_diff / $minute);
+        $output = $count . ' min' . ($count > 1 ? 's' : '') . ' ago';
+    } elseif ($time_diff < $day) {
+        $count = floor($time_diff / $hour);
+        $output = $count . ' hour' . ($count > 1 ? 's' : '') . ' ago';
+    } elseif ($time_diff < $week) {
+        $count = floor($time_diff / $day);
+        $output = $count . ' day' . ($count > 1 ? 's' : '') . ' ago';
+    } elseif ($time_diff < $month) {
+        $count = floor($time_diff / $week);
+        $output = $count . ' week' . ($count > 1 ? 's' : '') . ' ago';
+    } elseif ($time_diff < $year) {
+        $count = floor($time_diff / $month);
+        $output = $count . ' month' . ($count > 1 ? 's' : '') . ' ago';
+    } else {
+        $count = floor($time_diff / $year);
+        $output = $count . ' year' . ($count > 1 ? 's' : '') . ' ago';
     }
-    if ($time_diff < 3600) {
-        return esc_html(floor($time_diff / 60) . ' min ago');
-    }
-    if ($time_diff < 86400) {
-        return esc_html(floor($time_diff / 3600) . ' hour ago');
-    }
-    if ($time_diff < 604800) {
-        return esc_html(floor($time_diff / 86400) . ' day ago');
-    }
-    if ($time_diff < 2592000) {
-        return esc_html(floor($time_diff / 604800) . ' week ago');
-    }
-    return esc_html(floor($time_diff / 2592000) . ' month ago');
+
+    // Return The Result
+    return esc_html($output);
 }
 
 // Shortcode usage: [wwmt_time_ago] or [wwmt_time_ago icon="clock"]
 function wwmt_time_ago_shortcode($atts)
 {
     $atts = shortcode_atts(array(
-        'icon' => 'clock',  // clock, hourglass, calendar, history
+        'icon' => 'clock',
         'text' => '',
     ), $atts, 'wwmt_time_ago');
 
-    $time_ago = wwmt_time_ago();
+    // Get current post ID from the loop
+    $post_id = get_the_ID();
+
+    if (!$post_id) {
+        return '';
+    }
+
+    $time_ago = wwmt_time_ago($post_id);
 
     if (empty($time_ago)) {
         return '';
@@ -544,106 +579,31 @@ function wwmt_time_ago_shortcode($atts)
 }
 add_shortcode('wwmt_time_ago', 'wwmt_time_ago_shortcode');
 
-
 // ============================================================================
-// 13. BEAVER BUILDER META INJECTION (JS)
+// AJAX Handler - Get time ago for specific post
 // ============================================================================
-/**
- * Inject time elapsed into Beaver Builder post grids using JavaScript.
- */
-function inject_time_elapsed_bb_javascript()
+function get_post_time_ago_ajax()
 {
-    global $post;
+    // Verify nonce
+    check_ajax_referer('get_post_time_ago_nonce', 'nonce');
 
-    if (!$post || !isset($post->ID)) {
-        return;
+    // Get post ID
+    $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
+
+    if (!$post_id) {
+        wp_send_json_error('Invalid post ID');
     }
 
-    // Get time ago string
-    $time_ago = wwmt_time_ago();
+    // Get time ago for this specific post
+    $time_ago = wwmt_time_ago($post_id);
 
-    if (empty($time_ago)) {
-        return;
-    }
-
-    // Only run on pages with Beaver Builder modules
-    if (!class_exists('FLBuilder')) {
-        return;
-    }
-
-    echo '<script type="text/javascript">
-    (function($) {
-        $(document).ready(function() {
-            // Target all Beaver Builder post grid meta sections
-            $(".fl-post-grid-meta").each(function() {
-                var $meta = $(this);
-                
-                // Check if time already added
-                if ($meta.find(".custom-time-ago").length > 0) {
-                    return;
-                }
-                
-                // Add the time elapsed HTML
-                var timeHtml = \'<span class="custom-time-ago-wrap"><span class="custom-time-ago"><i class="far fa-clock"></i> \' + "' . esc_js($time_ago) . '" + \'</span></span>\';
-                
-                // Append to meta
-                $meta.append(timeHtml);
-            });
-        });
-    })(jQuery);
-    </script>';
+    wp_send_json_success(array(
+        'time_ago' => $time_ago,
+        'post_id' => $post_id
+    ));
 }
-add_action('wp_footer', 'inject_time_elapsed_bb_javascript', 999);
-
-
-// ============================================================================
-// 14. BEAVER BUILDER META INJECTION (FILTER)
-// ============================================================================
-/**
- * Alternative approach - Hook into Beaver Builder Template System
- */
-function cda_add_time_ago_to_bb_templates()
-{
-    global $post;
-
-    if (!$post || !isset($post->ID)) {
-        return;
-    }
-
-    $time_ago = wwmt_time_ago();
-
-    if (empty($time_ago)) {
-        return;
-    }
-
-    // Hook into Beaver Builder module output
-    ob_start();
-    $time_html = '<span class="custom-time-ago-wrap"><span class="custom-time-ago">' . $time_ago . '</span></span>';
-    echo $time_html;
-}
-
-// Filter for post grid meta output
-add_filter('fl_builder_post_grid_meta', function ($meta) {
-    // Make sure $meta is a string
-    if (!is_string($meta)) {
-        return $meta;
-    }
-
-    global $post;
-
-    if (!$post || !isset($post->ID)) {
-        return $meta;
-    }
-
-    $time_ago = wwmt_calculate_time_ago($post->ID); // Note: Function name fix in your original logic needed? wwmt_time_ago()
-
-    if (!empty($time_ago)) {
-        $meta .= ' | <span class="custom-time-ago"><i class="far fa-clock"></i> ' . esc_html($time_ago) . ' ago</span>';
-    }
-
-    return $meta;
-}, 999);
-
+add_action('wp_ajax_get_post_time_ago', 'get_post_time_ago_ajax');
+add_action('wp_ajax_nopriv_get_post_time_ago', 'get_post_time_ago_ajax');
 
 // ============================================================================
 // 15. CSS STYLING FOR TIME ELAPSED
@@ -1249,7 +1209,7 @@ function custom_signup_form_shortcode()
             </div>
         </div>
     </div>
-<?php
+    <?php
     return ob_get_clean();
 }
 add_shortcode('custom_signup_form', 'custom_signup_form_shortcode');
@@ -1386,38 +1346,40 @@ add_action('init', 'custom_hide_admin_bar_for_non_admin');
 // ============================================================================
 // 29. AUTO-SET DEFAULT FEATURED IMAGE
 // ============================================================================
-function my_custom_plugin_set_default_thumbnail( $post_id ) {
-    
+function my_custom_plugin_set_default_thumbnail($post_id)
+{
+
     // 1. Check if autosave
-    if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
         return;
     }
 
     // 2. Check if post type is 'post' (change to 'page' or custom type if needed)
-    if ( get_post_type( $post_id ) !== 'post' ) {
+    if (get_post_type($post_id) !== 'post') {
         return;
     }
 
     // 3. Check if the post already has a thumbnail
-    if ( has_post_thumbnail( $post_id ) ) {
-        return; 
+    if (has_post_thumbnail($post_id)) {
+        return;
     }
 
     // 4. GET DEFAULT IMAGE ID FROM SETTINGS
     $default_thumbnail_id = get_option('cad_default_featured_image');
 
     // 5. If an ID is set in settings, apply it
-    if ( !empty($default_thumbnail_id) ) {
-        update_post_meta( $post_id, '_thumbnail_id', $default_thumbnail_id );
+    if (!empty($default_thumbnail_id)) {
+        update_post_meta($post_id, '_thumbnail_id', $default_thumbnail_id);
     }
 }
-add_action( 'save_post', 'my_custom_plugin_set_default_thumbnail' );
+add_action('save_post', 'my_custom_plugin_set_default_thumbnail');
 
 // ============================================================================
-// 30. Weather & Date Shortcode
+// 30. Weather & Date Shortcode [date_weather]
 // ============================================================================
 
-function date_with_live_weather_shortcode() {
+function date_with_live_weather_shortcode()
+{
 
     // 1️⃣ Get city by IP
     $ip_response = wp_remote_get("http://ip-api.com/json/");
@@ -1446,4 +1408,141 @@ function date_with_live_weather_shortcode() {
 }
 add_shortcode('date_weather', 'date_with_live_weather_shortcode');
 
+// ============================================================================
+// 31. Post Time Elapsed in Post Grid and Enqueue script to inject post time
+// ============================================================================
 
+add_action('wp_footer', 'enqueue_post_time_script');
+
+function enqueue_post_time_script()
+{
+    // Get all posts from database
+    $args = array(
+        'post_type' => 'post',
+        'posts_per_page' => -1,
+        'post_status' => 'publish'
+    );
+
+    $posts = get_posts($args);
+    $post_times = array();
+
+    // Get time for each post
+    foreach ($posts as $post) {
+        $post_id = $post->ID;
+        $post_timestamp = strtotime($post->post_date);
+
+        // --- CHANGED TO RELATIVE TIME ---
+        // Calculate "Time Ago" (e.g., "2 hours ago", "1 month ago")
+        // human_time_diff returns "1 hour", "5 mins". We append " ago".
+        $post_time = human_time_diff($post_timestamp, current_time('timestamp')) . ' ago';
+
+        $post_times[$post_id] = $post_time;
+    }
+
+    wp_reset_postdata();
+    ?>
+    <script>
+        var postTimesData = <?php echo json_encode($post_times); ?>;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var postTitles = document.querySelectorAll('.fl-post-grid-title');
+            var postComments = document.querySelectorAll('.fl-post-feed-comments');
+
+            postComments.forEach(function(comment) {
+                var postLink = comment.querySelector('a');
+
+                if (postLink) {
+                    // 1. Get the Post ID
+                    var postGridPost = comment.closest('.fl-post-grid-post');
+
+                    if (postGridPost) {
+                        var classList = postGridPost.getAttribute('class');
+                        var match = classList.match(/post-(\d+)/);
+                        var postId = match ? match[1] : null;
+
+                        if (postId && postTimesData[postId]) {
+                            var postGridText = postGridPost.querySelector('.fl-post-grid-text');
+
+                            // We target the EXISTING date class (.fl-post-grid-date)
+                            var timeElapsedEl = postGridText.querySelector('.fl-post-grid-meta .fl-post-grid-date');
+
+                            // Fallback: If not in meta, try searching generally in text area
+                            if (!timeElapsedEl) {
+                                timeElapsedEl = postGridText.querySelector('.fl-post-grid-date');
+                            }
+
+                            // Get the original date text (e.g., "Jan 4, 2026") to show in parentheses
+                            var originalDate = timeElapsedEl ? timeElapsedEl.textContent.trim() : '';
+
+                            // Construct the new HTML
+                            // Result: Posted: 2 hours ago (Jan 4, 2026)
+                            var dateSuffix = originalDate ? ' (' + originalDate + ')' : '';
+
+                            // var timeHtml = '<div class="fl-post-time-custom"><i class="far fa-clock"></i> <strong>Posted:</strong> ' + postTimesData[postId] + dateSuffix + '</div>';
+                            
+                            // Create time elapsed HTML with clock icon
+                            var timeHtml = '<span class="fl-post-time-elapsed">' +
+                                '<i class="far fa-clock"></i> ' +
+                                postTimesData[postId] +
+                                '</span>';
+
+
+
+                            // title.insertAdjacentHTML('afterend', timeHtml);
+                            comment.insertAdjacentHTML('afterend', timeHtml);
+
+                            // var $commentsSpan = $metaContainer.find('.fl-post-feed-comments');
+
+                            
+                            // Optional: Hide the original date element to avoid duplicates
+                            if (timeElapsedEl) {
+                                timeElapsedEl.style.display = 'none';
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+<?php
+}
+
+
+// Add CSS styling for the post time
+add_action('wp_head', 'post_time_custom_css');
+
+function post_time_custom_css()
+{
+?>
+    <style>
+        .fl-post-time-custom {
+            background-color: #f9f9f9;
+            padding: 10px 0;
+            margin: 10px 0;
+            font-size: 14px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .fl-post-time-custom strong {
+            color: #333;
+        }
+
+        .fl-post-time-custom i {
+            color: #007cba;
+        }
+
+        .fl-post-time-elapsed {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-left: 10px;
+            font-size: 13px;
+            color: #666;
+        }
+        
+    </style>
+<?php
+}
