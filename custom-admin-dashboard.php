@@ -1209,7 +1209,7 @@ function custom_signup_form_shortcode()
             </div>
         </div>
     </div>
-    <?php
+<?php
     return ob_get_clean();
 }
 add_shortcode('custom_signup_form', 'custom_signup_form_shortcode');
@@ -1440,7 +1440,7 @@ function enqueue_post_time_script()
     }
 
     wp_reset_postdata();
-    ?>
+?>
     <script>
         var postTimesData = <?php echo json_encode($post_times); ?>;
 
@@ -1479,7 +1479,7 @@ function enqueue_post_time_script()
                             var dateSuffix = originalDate ? ' (' + originalDate + ')' : '';
 
                             // var timeHtml = '<div class="fl-post-time-custom"><i class="far fa-clock"></i> <strong>Posted:</strong> ' + postTimesData[postId] + dateSuffix + '</div>';
-                            
+
                             // Create time elapsed HTML with clock icon
                             var timeHtml = '<span class="fl-post-time-elapsed">' +
                                 '<i class="far fa-clock"></i> ' +
@@ -1493,7 +1493,7 @@ function enqueue_post_time_script()
 
                             // var $commentsSpan = $metaContainer.find('.fl-post-feed-comments');
 
-                            
+
                             // Optional: Hide the original date element to avoid duplicates
                             if (timeElapsedEl) {
                                 timeElapsedEl.style.display = 'none';
@@ -1538,11 +1538,193 @@ function post_time_custom_css()
             display: inline-flex;
             align-items: center;
             gap: 5px;
-            margin-left: 10px;
+            margin-right: 10px;
             font-size: 13px;
             color: #666;
         }
-        
     </style>
 <?php
 }
+
+// ============================================================================
+// 32. FORCE RTL (RIGHT-TO-LEFT) IN EDITORS - FIXED
+// ============================================================================
+
+/**
+ * Method 2: Inline CSS directly (Alternative if CSS file doesn't work)
+ * Uncomment if Method 1 doesn't work for you
+ */
+
+function cad_add_block_editor_rtl_styles()
+{
+    $css = "
+        /* Core Editor Container */
+        .edit-post-visual-editor,
+        .block-editor-writing-flow,
+        .wp-block-post-title,
+        .editor-post-title__input {
+            direction: rtl !important;
+            text-align: right !important;
+        }
+
+        /* Post Title */
+        .editor-post-title__input,
+        h1.editor-post-title__input {
+            direction: rtl !important;
+            text-align: right !important;
+            font-family: 'MV Faseyha', 'Thamaan', sans-serif !important;
+        }
+
+        /* Paragraph & Text Blocks */
+        .wp-block-paragraph,
+        .block-editor-rich-text__editable[data-is-placeholder-visible='false'],
+        p[role='textbox'] {
+            direction: rtl !important;
+            text-align: right !important;
+        }
+
+        /* Headings */
+        .wp-block-heading {
+            direction: rtl !important;
+            text-align: right !important;
+        }
+
+        /* Lists */
+        .wp-block-list,
+        .wp-block-list li {
+            direction: rtl !important;
+        }
+
+        /* All Block Content */
+        .wp-block {
+            direction: rtl !important;
+        }
+
+        /* Text Align Controls - ensure right-align is default */
+        [class*='text-align'] {
+            direction: rtl !important;
+        }
+
+        /* Form Tags field in Editor */
+        .components-form-token-field__input-container input[type=text].components-form-token-field__input {
+            direction: rtl !important;
+            text-align: right !important;
+        }
+
+        /* Form Category & Tag fields in Editor */
+        .components-text-control__input, .components-text-control__input[type=color], .components-text-control__input[type=date], 
+        .components-text-control__input[type=datetime-local], .components-text-control__input[type=datetime], .components-text-control__input[type=email], 
+        .components-text-control__input[type=month], .components-text-control__input[type=number], .components-text-control__input[type=password], 
+        .components-text-control__input[type=tel], .components-text-control__input[type=text], .components-text-control__input[type=time], .components-text-control__input[type=url], 
+        .components-text-control__input[type=week] {
+            direction: rtl !important;
+            text-align: right !important;
+        }
+
+    ";
+
+    wp_add_inline_style('wp-edit-blocks', $css);
+}
+add_action('enqueue_block_editor_assets', 'cad_add_block_editor_rtl_styles');
+
+// RTL Styles for Category and Tag Pages
+function cad_add_taxonomy_rtl_styles()
+{
+    $css = "
+        /* Category & Tag Form Wrapper */
+        .form-wrap {
+            // direction: rtl !important;
+        }
+
+        /* All Form Fields */
+        .form-field input[type=text],
+        .form-field input[type=email],
+        .form-field input[type=url],
+        .form-field textarea{
+            direction: rtl !important;
+            text-align: right !important;
+        }
+
+        /* Specific Input Fields */
+        #tag-name,
+        #tag-slug,
+        #tag-description{
+            direction: rtl !important;
+            text-align: right !important;
+        }
+
+        // /* Parent Category/Tag Dropdown */
+        // select.postform {
+        //     direction: rtl !important;
+        // }
+
+        // /* Description Textarea */
+        // textarea[name='description'] {
+        //     direction: rtl !important;
+        //     text-align: right !important;
+        // }
+
+        // /* Form Field Labels */
+        // .form-field label {
+        //     display: block !important;
+        //     text-align: right !important;
+        // }
+
+        // /* Description Paragraphs */
+        // .form-field p {
+        //     text-align: right !important;
+        // }
+
+    ";
+
+    wp_add_inline_style('wp-admin', $css);
+}
+add_action('admin_enqueue_scripts', 'cad_add_taxonomy_rtl_styles');
+
+// Enable Category and Tag Management for Author Role
+function cad_add_author_taxonomy_capabilities()
+{
+    // Get the Author role
+    $author_role = get_role('editor');
+
+    if ($author_role) {
+        // Category Capabilities
+        $author_role->add_cap('manage_categories');
+        $author_role->add_cap('edit_categories');
+        $author_role->add_cap('delete_categories');
+        $author_role->add_cap('assign_categories');
+
+        // Tag Capabilities
+        $author_role->add_cap('manage_post_tags');
+        $author_role->add_cap('edit_post_tags');
+        $author_role->add_cap('delete_post_tags');
+        $author_role->add_cap('assign_post_tags');
+    }
+}
+
+// Run once on plugin/theme activation
+register_activation_hook(__FILE__, 'cad_add_author_taxonomy_capabilities');
+
+add_action( 'pre_get_posts', 'restrict_posts_by_user_role' );
+
+function restrict_posts_by_user_role( $query ) {
+    // Only apply to admin area and main query
+    if ( ! is_admin() || ! $query->is_main_query() ) {
+        return;
+    }
+
+    // Get current user
+    $current_user = wp_get_current_user();
+
+    // Allow Administrators and Editors to see all posts
+    if ( in_array( 'administrator', $current_user->roles ) || in_array( 'editor', $current_user->roles ) ) {
+        return;
+    }
+
+    // For Authors and other roles, show only their own posts
+    if ( in_array( 'author', $current_user->roles ) ) {
+        $query->set( 'author', $current_user->ID );
+    }
+}
+
+
