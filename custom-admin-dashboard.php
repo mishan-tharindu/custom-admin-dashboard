@@ -1681,29 +1681,38 @@ function cad_add_taxonomy_rtl_styles()
 }
 add_action('admin_enqueue_scripts', 'cad_add_taxonomy_rtl_styles');
 
-// Enable Category and Tag Management for Author Role
-function cad_add_author_taxonomy_capabilities()
-{
-    // Get the Author role
-    $author_role = get_role('editor');
+// ============================================================================
+// 33. Show Category and Tag Management to Editor Role
+// ============================================================================
 
-    if ($author_role) {
+// Enable Category and Tag Management for Editor Role
+function cad_add_editor_taxonomy_capabilities()
+{
+    // Get the Editor role
+    $editor_role = get_role('editor');
+
+    if ($editor_role) {
         // Category Capabilities
-        $author_role->add_cap('manage_categories');
-        $author_role->add_cap('edit_categories');
-        $author_role->add_cap('delete_categories');
-        $author_role->add_cap('assign_categories');
+        $editor_role->add_cap('manage_categories');
+        $editor_role->add_cap('edit_categories');
+        $editor_role->add_cap('delete_categories');
+        $editor_role->add_cap('assign_categories');
 
         // Tag Capabilities
-        $author_role->add_cap('manage_post_tags');
-        $author_role->add_cap('edit_post_tags');
-        $author_role->add_cap('delete_post_tags');
-        $author_role->add_cap('assign_post_tags');
+        $editor_role->add_cap('manage_post_tags');
+        $editor_role->add_cap('edit_post_tags');
+        $editor_role->add_cap('delete_post_tags');
+        $editor_role->add_cap('assign_post_tags');
     }
 }
 
-// Run once on plugin/theme activation
-register_activation_hook(__FILE__, 'cad_add_author_taxonomy_capabilities');
+register_activation_hook(__FILE__, 'cad_add_editor_taxonomy_capabilities');
+
+
+// ============================================================================
+// 34. RESTRICT POSTS VIEW IN ADMIN BASED ON USER ROLE
+// ============================================================================
+
 
 add_action( 'pre_get_posts', 'restrict_posts_by_user_role' );
 
