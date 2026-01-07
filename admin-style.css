@@ -491,6 +491,19 @@ div#ogf-rss-feed {
     text-decoration: underline;
 }
 
+/* =========================================================================
+ * 10. Ready for Review button Styling
+ * ========================================================================= */
+ button.components-button.editor-post-save-draft.is-compact.is-tertiary {
+    background: #FF6701;
+    color: black;
+}
+
+ button.components-button.editor-post-save-draft.is-compact.is-tertiary:hover {
+    background: #FF8C4D;
+    color: white;
+ }
+
 
 /* =========================================================================
  * 11. RESPONSIVE & ACCESSIBILITY

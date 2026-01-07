@@ -1714,11 +1714,12 @@ register_activation_hook(__FILE__, 'cad_add_editor_taxonomy_capabilities');
 // ============================================================================
 
 
-add_action( 'pre_get_posts', 'restrict_posts_by_user_role' );
+add_action('pre_get_posts', 'restrict_posts_by_user_role');
 
-function restrict_posts_by_user_role( $query ) {
+function restrict_posts_by_user_role($query)
+{
     // Only apply to admin area and main query
-    if ( ! is_admin() || ! $query->is_main_query() ) {
+    if (! is_admin() || ! $query->is_main_query()) {
         return;
     }
 
@@ -1726,14 +1727,54 @@ function restrict_posts_by_user_role( $query ) {
     $current_user = wp_get_current_user();
 
     // Allow Administrators and Editors to see all posts
-    if ( in_array( 'administrator', $current_user->roles ) || in_array( 'editor', $current_user->roles ) ) {
+    if (in_array('administrator', $current_user->roles) || in_array('editor', $current_user->roles)) {
         return;
     }
 
     // For Authors and other roles, show only their own posts
-    if ( in_array( 'author', $current_user->roles ) ) {
-        $query->set( 'author', $current_user->ID );
+    if (in_array('author', $current_user->roles)) {
+        $query->set('author', $current_user->ID);
     }
 }
 
+// ============================================================================
+// 35.  HIDE PUBLISH BUTTON FOR AUTHOR ROLE IN GUTENBERG EDITOR
+// ============================================================================
 
+/**
+ * Hide Publish button and rename Save Draft for Author role in Gutenberg Editor
+ * Using WordPress filters - No DOM manipulation
+ */
+
+add_action('enqueue_block_editor_assets', 'restrict_author_publish_gutenberg');
+
+function restrict_author_publish_gutenberg()
+{
+    // Get current user
+    $current_user = wp_get_current_user();
+
+    // Only apply to Authors
+    if (! in_array('author', $current_user->roles)) {
+        return;
+    }
+
+    // Enqueue the script
+    wp_enqueue_script(
+        'author-restrict-publish',
+        plugin_dir_url(__FILE__) . 'js/author-restrict.js',
+        array('wp-blocks', 'wp-dom-ready', 'wp-edit-post', 'wp-components'),
+        '1.0',
+        true
+    );
+
+    // Add inline CSS to hide publish button safely
+    wp_add_inline_style(
+        'wp-edit-post',
+        '
+        .editor-post-publish-button__button,
+        .editor-post-publish-panel__toggle {
+            display: none !important;
+        }
+        '
+    );
+}
