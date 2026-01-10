@@ -1,0 +1,38 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "cad/photo-caption",
+  "version": "1.2.0",
+  "title": "Photo Caption",
+  "category": "design",
+  "icon": "format-image",
+  "description": "A stylish caption block with theme-supported typography.",
+  "attributes": {
+    "caption": {
+      "type": "string",
+      "default": "Enter your caption text here..."
+    }
+  },
+  "supports": {
+    "color": {
+      "text": true,
+      "background": true
+    },
+    "typography": {
+      "fontSize": true,
+      "fontFamily": true, 
+      "lineHeight": true,
+      "fontStyle": true,
+      "fontWeight": true,
+      "textDecoration": true,
+      "textTransform": true
+    },
+    "spacing": {
+      "margin": true,
+      "padding": true
+    }
+  },
+  "editorScript": "file:./index.js",
+  "style": "file:./style.css",
+  "render": "file:./render.php"
+}

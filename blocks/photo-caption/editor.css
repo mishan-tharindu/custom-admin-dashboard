@@ -1,0 +1,16 @@
+/* Editor Styles */
+.wp-block-custom-admin-dashboard-photo-caption {
+    margin: 1.5em 0;
+}
+
+.wp-block-custom-admin-dashboard-photo-caption .photo-caption {
+    padding: 16px 20px;
+    background-color: #f9f9f9;
+    border-left: 4px solid #333;
+    border-radius: 4px;
+}
+
+.wp-block-custom-admin-dashboard-photo-caption .photo-caption__text {
+    font-weight: bold;
+    line-height: 1.6;
+}

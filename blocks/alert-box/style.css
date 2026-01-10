@@ -1,0 +1,32 @@
+.cad-alert-box {
+    padding: 15px;
+    border-radius: 5px;
+    margin: 20px 0;
+    border-left: 5px solid;
+}
+
+/* Editor specific tweak */
+.cad-alert-box-editor {
+    padding: 15px;
+    border: 1px dashed #ccc;
+    margin-bottom: 10px;
+}
+
+/* Types */
+.cad-alert-box.info, .cad-alert-box-editor.info {
+    background-color: #e7f3fe;
+    border-color: #2196F3;
+    color: #0c5460;
+}
+
+.cad-alert-box.warning, .cad-alert-box-editor.warning {
+    background-color: #fff3cd;
+    border-color: #ff9800;
+    color: #856404;
+}
+
+.cad-alert-box.success, .cad-alert-box-editor.success {
+    background-color: #d4edda;
+    border-color: #28a745;
+    color: #155724;
+}

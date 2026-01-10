@@ -446,6 +446,17 @@ function my_plugin_settings_page()
             <?php submit_button(); ?>
         </form>
     </div>
+    <div class="wrap">
+        <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+
+        <form method="post" action="options.php" style="background: #fff; padding: 20px; border: 1px solid #ccd0d4; max-width: 800px; margin-top: 20px;">
+            <?php settings_fields('cad_plugin_options_group'); ?>
+
+            <?php do_settings_sections('cad_plugin_options_group'); ?>
+            <?php cad_custom_fonts_section_html(); ?>
+            <?php submit_button(); ?>
+        </form>
+    </div>
 <?php
 }
 
@@ -1777,4 +1788,779 @@ function restrict_author_publish_gutenberg()
         }
         '
     );
+}
+
+// ============================================================================
+// 36.  post URL as Post ID
+// ============================================================================
+// Add rewrite rule for post IDs
+add_action('init', 'custom_post_id_rewrite_rule');
+function custom_post_id_rewrite_rule()
+{
+    add_rewrite_rule('^([0-9]+)/?$', 'index.php?p=$1', 'top');
+}
+
+// Filter to change post URLs
+add_filter('post_link', 'custom_post_url_by_id', 10, 2);
+function custom_post_url_by_id($permalink, $post)
+{
+    if ($post->post_type === 'post') {
+        return home_url('/' . $post->ID . '/');
+    }
+    return $permalink;
+}
+
+// ============================================================================
+// 37. REGISTER CUSTOM BLOCKS
+// ============================================================================
+function cad_register_custom_blocks()
+{
+    // Register the Alert Box Block
+    // Point this to the FOLDER containing block.json
+    register_block_type(plugin_dir_path(__FILE__) . 'blocks/alert-box');
+    // Register the Photo Caption Block
+    register_block_type(plugin_dir_path(__FILE__) . 'blocks/photo-caption');
+}
+add_action('init', 'cad_register_custom_blocks');
+
+// ============================================================================
+// 38. CUSTOM FONT UPLOADER & MANAGER (FULLY FIXED & TESTED)
+// ============================================================================
+
+// 1. ALLOW FONT FILE UPLOADS (SECURITY FIX)
+function cad_allow_font_mime_types($mimes)
+{
+    $mimes['woff']  = 'application/font-woff';
+    $mimes['woff2'] = 'application/font-woff2';
+    $mimes['ttf']   = 'application/x-font-ttf';
+    $mimes['otf']   = 'application/x-font-opentype';
+    return $mimes;
+}
+add_filter('upload_mimes', 'cad_allow_font_mime_types');
+
+// 1.1 BYPASS WORDPRESS REAL MIME CHECK
+function cad_fix_font_mime_issue($data, $file, $filename, $mimes)
+{
+    $ext = pathinfo($filename, PATHINFO_EXTENSION);
+    if (in_array($ext, array('otf', 'ttf', 'woff', 'woff2'))) {
+        $data['ext'] = $ext;
+        $data['type'] = 'application/x-font-opentype';
+        if ($ext === 'ttf')   $data['type'] = 'application/x-font-ttf';
+        if ($ext === 'woff')  $data['type'] = 'application/font-woff';
+        if ($ext === 'woff2') $data['type'] = 'application/font-woff2';
+    }
+    return $data;
+}
+add_filter('wp_check_filetype_and_ext', 'cad_fix_font_mime_issue', 10, 4);
+
+// 2. REGISTER SETTINGS (SANITIZE ON SAVE)
+function cad_register_font_settings()
+{
+    register_setting(
+        'cad_font_options_group',
+        'cad_custom_fonts',
+        array(
+            'type'              => 'array',
+            'sanitize_callback' => 'cad_sanitize_fonts',
+            'show_in_rest'      => false
+        )
+    );
+}
+add_action('admin_init', 'cad_register_font_settings');
+
+// 2.1 SANITIZE FONTS BEFORE SAVING
+function cad_sanitize_fonts($fonts)
+{
+    if (!is_array($fonts)) return array();
+
+    $sanitized = array();
+    foreach ($fonts as $font) {
+        if (!empty($font['name']) && !empty($font['url'])) {
+            $sanitized[] = array(
+                'name'   => sanitize_text_field($font['name']),
+                'url'    => esc_url_raw($font['url']),
+                'weight' => sanitize_text_field($font['weight']) ?: 'normal'
+            );
+        }
+    }
+    return $sanitized;
+}
+
+// 3. ADMIN SETTINGS UI (TABLE LAYOUT)
+function cad_custom_fonts_section_html()
+{
+    $fonts = get_option('cad_custom_fonts', array());
+    if (!is_array($fonts)) {
+        $fonts = array();
+    }
+?>
+    <hr>
+    <h2>Custom Fonts Manager</h2>
+    <p>Upload your font files. These will appear in the <strong>Block Editor</strong> and <strong>Classic Editor</strong> font dropdowns.</p>
+
+    <form method="POST" action="options.php">
+        <?php settings_fields('cad_font_options_group'); ?>
+
+        <table class="wp-list-table table-view-list fixed widefat striped" id="cad-font-table">
+            <thead>
+                <tr>
+                    <th style="width: 20%;">Font Name</th>
+                    <th style="width: 15%;">Preview</th>
+                    <th style="width: 15%;">Weight</th>
+                    <th style="width: 40%;">File URL</th>
+                    <th style="width: 10%;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="cad-font-tbody">
+                <?php
+                if (!empty($fonts)) :
+                    foreach ($fonts as $index => $font) :
+                        $font_family = esc_attr($font['name']);
+                        $font_weight = esc_attr($font['weight']);
+                        $font_url = esc_url($font['url']);
+                ?>
+                        <tr class="cad-font-row">
+                            <td>
+                                <input type="text" 
+                                       name="cad_custom_fonts[<?php echo $index; ?>][name]" 
+                                       value="<?php echo $font_family; ?>" 
+                                       class="cad-font-name-input widefat" 
+                                       placeholder="Font Name" 
+                                       required>
+                            </td>
+                            <td>
+                                <style>
+                                    @font-face {
+                                        font-family: '<?php echo $font_family; ?>';
+                                        src: url('<?php echo $font_url; ?>');
+                                        font-weight: <?php echo $font_weight; ?>;
+                                        font-display: swap;
+                                    }
+                                </style>
+                                <span class="cad-font-preview"
+                                    style="
+                                        font-family:'<?php echo $font_family; ?>';
+                                        font-size:18px;
+                                        font-weight:<?php echo $font_weight; ?>;
+                                    ">
+                                    Abc 123
+                                </span>
+                            </td>
+                            <td>
+                                <select name="cad_custom_fonts[<?php echo $index; ?>][weight]" class="widefat cad-weight-select">
+                                    <option value="normal" <?php selected($font_weight, 'normal'); ?>>Normal</option>
+                                    <option value="bold" <?php selected($font_weight, 'bold'); ?>>Bold</option>
+                                    <option value="300" <?php selected($font_weight, '300'); ?>>Light</option>
+                                    <option value="900" <?php selected($font_weight, '900'); ?>>Black</option>
+                                </select>
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 5px;">
+                                    <input type="text" 
+                                           name="cad_custom_fonts[<?php echo $index; ?>][url]" 
+                                           id="cad_font_url_<?php echo $index; ?>" 
+                                           value="<?php echo $font_url; ?>" 
+                                           class="cad-font-url-input widefat"
+                                           required>
+                                    <button type="button" class="cad-upload-font-btn button" data-target="#cad_font_url_<?php echo $index; ?>">Upload</button>
+                                </div>
+                            </td>
+                            <td>
+                                <button type="button" class="button button-link-delete cad-remove-row"><span class="dashicons dashicons-trash"></span></button>
+                            </td>
+                        </tr>
+                    <?php endforeach;
+                endif; ?>
+            </tbody>
+        </table>
+
+        <div style="margin-top: 10px; margin-bottom: 20px;">
+            <button type="button" class="button button-secondary" id="cad-add-font-row">+ Add New Font</button>
+        </div>
+
+        <button type="submit" class="button button-primary">Save Fonts</button>
+    </form>
+
+    <script>
+        jQuery(document).ready(function($) {
+
+            // Helper to get next index
+            function getNextIndex() {
+                var maxIndex = -1;
+                $('#cad-font-tbody tr').each(function() {
+                    var inputs = $(this).find('input, select');
+                    inputs.each(function() {
+                        var name = $(this).attr('name');
+                        if (name) {
+                            var match = name.match(/\[(\d+)\]/);
+                            if (match && parseInt(match[1]) > maxIndex) {
+                                maxIndex = parseInt(match[1]);
+                            }
+                        }
+                    });
+                });
+                return maxIndex + 1;
+            }
+
+            // ADD ROW
+            $('#cad-add-font-row').on('click', function() {
+                var index = getNextIndex();
+
+                var rowHtml = `
+                <tr class="cad-font-row">
+                    <td>
+                        <input type="text" name="cad_custom_fonts[${index}][name]" class="cad-font-name-input widefat" placeholder="Font Name" required>
+                    </td>
+                    <td>
+                        <span class="cad-font-preview" style="font-size:18px;">Abc 123</span>
+                    </td>
+                    <td>
+                        <select name="cad_custom_fonts[${index}][weight]" class="widefat cad-weight-select">
+                            <option value="normal">Normal</option>
+                            <option value="bold">Bold</option>
+                            <option value="300">Light</option>
+                            <option value="900">Black</option>
+                        </select>
+                    </td>
+                    <td>
+                        <div style="display:flex; gap:5px;">
+                            <input type="text" name="cad_custom_fonts[${index}][url]" id="cad_font_url_${index}" class="cad-font-url-input widefat" required>
+                            <button type="button" class="cad-upload-font-btn button" data-target="#cad_font_url_${index}">Upload</button>
+                        </div>
+                    </td>
+                    <td>
+                        <button type="button" class="button button-link-delete cad-remove-row">
+                            <span class="dashicons dashicons-trash"></span>
+                        </button>
+                    </td>
+                </tr>
+            `;
+
+                $('#cad-font-tbody').append(rowHtml);
+            });
+
+            // REMOVE ROW
+            $(document).on('click', '.cad-remove-row', function(e) {
+                e.preventDefault();
+                $(this).closest('tr').remove();
+            });
+
+            // UPLOAD BUTTON
+            var frame;
+            $(document).on('click', '.cad-upload-font-btn', function(e) {
+                e.preventDefault();
+                var targetInput = $(this).data('target');
+                
+                if (frame) {
+                    frame.open();
+                    return;
+                }
+                
+                frame = wp.media({
+                    title: 'Select Font',
+                    button: {
+                        text: 'Use Font'
+                    },
+                    multiple: false,
+                    library: {
+                        type: ['application/x-font-ttf', 'application/x-font-woff', 'application/font-woff', 'application/font-woff2', 'application/x-font-opentype']
+                    }
+                });
+                
+                frame.on('select', function() {
+                    var attachment = frame.state().get('selection').first().toJSON();
+                    $(targetInput).val(attachment.url).trigger('change');
+                });
+                
+                frame.open();
+            });
+
+            // LIVE PREVIEW UPDATE (NAME + URL + WEIGHT)
+            $(document).on('input change', '.cad-font-name-input, .cad-weight-select, .cad-font-url-input', function() {
+                var row = $(this).closest('tr');
+                var name = row.find('.cad-font-name-input').val();
+                var url = row.find('.cad-font-url-input').val();
+                var weight = row.find('.cad-weight-select').val();
+
+                if (!name || !url) return;
+
+                // Remove old style
+                row.find('style.cad-preview-style').remove();
+
+                // Inject new font-face
+                var style = `
+        <style class="cad-preview-style">
+            @font-face {
+                font-family: '${name}';
+                src: url('${url}');
+                font-weight: ${weight};
+                font-display: swap;
+            }
+        </style>
+    `;
+
+                row.find('td').first().append(style);
+
+                // Apply to preview
+                row.find('.cad-font-preview').css({
+                    'font-family': name,
+                    'font-weight': weight
+                });
+            });
+
+        });
+    </script>
+<?php
+}
+add_action('cad_after_plugin_settings', 'cad_custom_fonts_section_html');
+
+
+// 4. GENERATE CSS (FRONTEND + ADMIN + BLOCK EDITOR)
+function cad_generate_font_css()
+{
+    $fonts = get_option('cad_custom_fonts', array());
+    if (empty($fonts) || !is_array($fonts)) return;
+
+    $css = "";
+    foreach ($fonts as $font) {
+        if (!empty($font['name']) && !empty($font['url'])) {
+            $name = esc_attr($font['name']);
+            $url = esc_url($font['url']);
+            $weight = esc_attr($font['weight']);
+            
+            $css .= "@font-face {\n";
+            $css .= "    font-family: '{$name}';\n";
+            $css .= "    src: url('{$url}');\n";
+            $css .= "    font-weight: {$weight};\n";
+            $css .= "    font-display: swap;\n";
+            $css .= "}\n";
+            $css .= ".font-" . sanitize_title($name) . " { font-family: '{$name}', sans-serif; }\n\n";
+        }
+    }
+
+    if (!empty($css)) {
+        echo '<style type="text/css" id="cad-custom-fonts-css">' . $css . '</style>';
+    }
+}
+add_action('wp_head', 'cad_generate_font_css', 5);
+add_action('admin_head', 'cad_generate_font_css', 5);
+add_action('login_head', 'cad_generate_font_css', 5);
+
+
+// 5. ADD TO GUTENBERG (BLOCK EDITOR) FONT SELECTOR
+function cad_add_fonts_to_gutenberg($settings)
+{
+    $fonts = get_option('cad_custom_fonts', array());
+    if (empty($fonts) || !is_array($fonts)) return $settings;
+
+    $new_fonts = array();
+    foreach ($fonts as $font) {
+        if (!empty($font['name'])) {
+            $new_fonts[] = array(
+                'name'       => $font['name'],
+                'slug'       => sanitize_title($font['name']),
+                'fontFamily' => "'" . esc_attr($font['name']) . "', sans-serif",
+            );
+        }
+    }
+
+    if (empty($new_fonts)) return $settings;
+
+    // Initialize fontFamilies if not exists
+    if (!isset($settings['fontFamilies'])) {
+        $settings['fontFamilies'] = array();
+    }
+
+    // Add custom fonts
+    if (isset($settings['fontFamilies']['custom'])) {
+        $settings['fontFamilies']['custom'] = array_merge($settings['fontFamilies']['custom'], $new_fonts);
+    } else {
+        $settings['fontFamilies']['custom'] = $new_fonts;
+    }
+
+    return $settings;
+}
+add_filter('block_editor_settings_all', 'cad_add_fonts_to_gutenberg', 10, 2);
+
+
+// 6. ADD TO CLASSIC EDITOR (TINY MCE) FONT SELECTOR
+function cad_add_fonts_to_classic_editor($init_array)
+{
+    $fonts = get_option('cad_custom_fonts', array());
+    if (empty($fonts) || !is_array($fonts)) return $init_array;
+
+    $font_formats = isset($init_array['font_formats']) 
+        ? $init_array['font_formats'] 
+        : 'Andale Mono=andale mono,times;Arial=arial,helvetica,sans-serif;Arial Black=arial black,avant garde;Book Antiqua=book antiqua,palatino;Comic Sans MS=comic sans ms,sans-serif;Courier New=courier new,courier;Georgia=georgia,palatino;Impact=impact,chicago;Symbol=symbol;Tahoma=tahoma,arial,helvetica,sans-serif;Terminal=terminal,monaco;Times New Roman=times new roman,times;Trebuchet MS=trebuchet ms,geneva;Verdana=verdana,geneva;Webdings=webdings;Wingdings=wingdings,zapf dingbats';
+
+    foreach ($fonts as $font) {
+        if (!empty($font['name'])) {
+            $font_name = $font['name'];
+            $font_formats .= ';' . $font_name . '=' . $font_name;
+        }
+    }
+
+    $init_array['font_formats'] = $font_formats;
+    return $init_array;
+}
+add_filter('tiny_mce_before_init', 'cad_add_fonts_to_classic_editor');
+
+
+// ============================================================================
+// 7. WORDPRESS CUSTOMIZER INTEGRATION
+// ============================================================================
+
+function cad_customize_register($wp_customize)
+{
+    // Add Custom Fonts Section
+    $wp_customize->add_section('cad_custom_fonts_section', array(
+        'title'       => 'Custom Fonts',
+        'priority'    => 25,
+        'description' => 'Select custom fonts for your website'
+    ));
+
+    // Get all custom fonts
+    $fonts = get_option('cad_custom_fonts', array());
+    if (empty($fonts) || !is_array($fonts)) {
+        return; // No fonts added yet
+    }
+
+    // Create a setting and control for body font
+    $wp_customize->add_setting('cad_body_font', array(
+        'default'           => '',
+        'sanitize_callback' => 'sanitize_text_field',
+        'transport'         => 'postMessage'
+    ));
+
+    $wp_customize->add_control('cad_body_font', array(
+        'label'    => 'Body Font',
+        'section'  => 'cad_custom_fonts_section',
+        'type'     => 'select',
+        'choices'  => cad_get_fonts_choices()
+    ));
+
+    // Create a setting and control for heading font
+    $wp_customize->add_setting('cad_heading_font', array(
+        'default'           => '',
+        'sanitize_callback' => 'sanitize_text_field',
+        'transport'         => 'postMessage'
+    ));
+
+    $wp_customize->add_control('cad_heading_font', array(
+        'label'    => 'Heading Font',
+        'section'  => 'cad_custom_fonts_section',
+        'type'     => 'select',
+        'choices'  => cad_get_fonts_choices()
+    ));
+
+    // Heading font size
+    $wp_customize->add_setting('cad_heading_font_size', array(
+        'default'           => '32',
+        'sanitize_callback' => 'absint',
+        'transport'         => 'postMessage'
+    ));
+
+    $wp_customize->add_control('cad_heading_font_size', array(
+        'label'   => 'Heading Font Size (px)',
+        'section' => 'cad_custom_fonts_section',
+        'type'    => 'number',
+        'input_attrs' => array(
+            'min'  => 10,
+            'max'  => 100,
+            'step' => 1
+        )
+    ));
+
+    // Body font size
+    $wp_customize->add_setting('cad_body_font_size', array(
+        'default'           => '16',
+        'sanitize_callback' => 'absint',
+        'transport'         => 'postMessage'
+    ));
+
+    $wp_customize->add_control('cad_body_font_size', array(
+        'label'   => 'Body Font Size (px)',
+        'section' => 'cad_custom_fonts_section',
+        'type'    => 'number',
+        'input_attrs' => array(
+            'min'  => 10,
+            'max'  => 100,
+            'step' => 1
+        )
+    ));
+}
+add_action('customize_register', 'cad_customize_register');
+
+// Helper function to get fonts choices for customizer
+function cad_get_fonts_choices()
+{
+    $fonts = get_option('cad_custom_fonts', array());
+    $choices = array(
+        '' => '- Select Font -'
+    );
+
+    if (!empty($fonts) && is_array($fonts)) {
+        foreach ($fonts as $font) {
+            if (!empty($font['name'])) {
+                $choices[$font['name']] = $font['name'];
+            }
+        }
+    }
+
+    return $choices;
+}
+
+// Apply customizer font settings to frontend
+function cad_customizer_frontend_css()
+{
+    $body_font = get_theme_mod('cad_body_font');
+    $heading_font = get_theme_mod('cad_heading_font');
+    $body_size = get_theme_mod('cad_body_font_size', '16');
+    $heading_size = get_theme_mod('cad_heading_font_size', '32');
+
+    $css = '';
+
+    if (!empty($body_font)) {
+        $css .= "body { font-family: '" . esc_attr($body_font) . "', sans-serif; font-size: " . absint($body_size) . "px; }\n";
+    }
+
+    if (!empty($heading_font)) {
+        $css .= "h1, h2, h3, h4, h5, h6 { font-family: '" . esc_attr($heading_font) . "', sans-serif; font-size: " . absint($heading_size) . "px; }\n";
+    }
+
+    if (!empty($css)) {
+        echo '<style type="text/css" id="cad-customizer-fonts-css">' . $css . '</style>';
+    }
+}
+add_action('wp_head', 'cad_customizer_frontend_css', 10);
+
+
+// ============================================================================
+// 8. REST API - GET FONTS (FOR JAVASCRIPT/MODULES)
+// ============================================================================
+
+function cad_register_fonts_rest_endpoint()
+{
+    register_rest_route('cad/v1', '/fonts', array(
+        'methods'             => 'GET',
+        'callback'            => 'cad_get_fonts_rest',
+        'permission_callback' => '__return_true'
+    ));
+}
+add_action('rest_api_init', 'cad_register_fonts_rest_endpoint');
+
+function cad_get_fonts_rest($request)
+{
+    $fonts = get_option('cad_custom_fonts', array());
+
+    if (empty($fonts) || !is_array($fonts)) {
+        return new WP_REST_Response(array(), 200);
+    }
+
+    return new WP_REST_Response($fonts, 200);
+}
+
+
+// ============================================================================
+// 9. HELPER FUNCTION - GET FONTS AS ARRAY (FOR PHP TEMPLATES)
+// ============================================================================
+
+function cad_get_custom_fonts()
+{
+    $fonts = get_option('cad_custom_fonts', array());
+    return is_array($fonts) ? $fonts : array();
+}
+
+
+// ============================================================================
+// 10. HELPER FUNCTION - GET FONT BY NAME
+// ============================================================================
+
+function cad_get_font_by_name($font_name)
+{
+    $fonts = cad_get_custom_fonts();
+
+    foreach ($fonts as $font) {
+        if ($font['name'] === $font_name) {
+            return $font;
+        }
+    }
+
+    return null;
+}
+
+
+// ============================================================================
+// 11. ELEMENTOR INTEGRATION (if using Elementor)
+// ============================================================================
+
+function cad_register_elementor_fonts($fonts)
+{
+    $custom_fonts = cad_get_custom_fonts();
+
+    if (!empty($custom_fonts)) {
+        foreach ($custom_fonts as $font) {
+            $fonts[$font['name']] = 'custom';
+        }
+    }
+
+    return $fonts;
+}
+add_filter('elementor/fonts/groups', 'cad_register_elementor_fonts');
+
+function cad_register_elementor_fonts_list($fonts)
+{
+    $custom_fonts = cad_get_custom_fonts();
+
+    if (!empty($custom_fonts)) {
+        foreach ($custom_fonts as $font) {
+            if (!isset($fonts[$font['name']])) {
+                $fonts[$font['name']] = 'custom';
+            }
+        }
+    }
+
+    return $fonts;
+}
+add_filter('elementor/controls/font_families/groups', 'cad_register_elementor_fonts_list');
+
+
+// ============================================================================
+// 12. BEAVER BUILDER INTEGRATION (if using Beaver Builder)
+// ============================================================================
+
+function cad_register_beaver_fonts($fonts)
+{
+    $custom_fonts = cad_get_custom_fonts();
+
+    if (!empty($custom_fonts)) {
+        foreach ($custom_fonts as $font) {
+            $fonts[$font['name']] = $font['name'];
+        }
+    }
+
+    return $fonts;
+}
+add_filter('fl_builder_font_families', 'cad_register_beaver_fonts');
+
+
+// ============================================================================
+// 13. DIVI INTEGRATION (if using Divi)
+// ============================================================================
+
+function cad_register_divi_fonts($fonts)
+{
+    $custom_fonts = cad_get_custom_fonts();
+
+    if (!empty($custom_fonts)) {
+        foreach ($custom_fonts as $font) {
+            $fonts[$font['name']] = $font['name'];
+        }
+    }
+
+    return $fonts;
+}
+add_filter('et_builder_fonts', 'cad_register_divi_fonts');
+
+
+// ============================================================================
+// 14. HELPER FUNCTION - GET FONTS DROPDOWN HTML
+// ============================================================================
+
+function cad_fonts_dropdown($selected = '')
+{
+    $fonts = cad_get_custom_fonts();
+    $html = '<select name="font" id="cad-font-select">';
+    $html .= '<option value="">- Select Font -</option>';
+
+    foreach ($fonts as $font) {
+        $selected_attr = ($selected === $font['name']) ? 'selected' : '';
+        $html .= '<option value="' . esc_attr($font['name']) . '" ' . $selected_attr . '>' . esc_html($font['name']) . '</option>';
+    }
+
+    $html .= '</select>';
+    return $html;
+}
+
+
+// ============================================================================
+// 15. SHORTCODE - USE CUSTOM FONT
+// ============================================================================
+
+function cad_custom_font_shortcode($atts)
+{
+    $atts = shortcode_atts(array(
+        'font'    => '',
+        'size'    => '16',
+        'weight'  => 'normal',
+        'color'   => 'inherit',
+        'content' => ''
+    ), $atts);
+
+    if (empty($atts['font'])) {
+        return '';
+    }
+
+    $style = "font-family: '" . esc_attr($atts['font']) . "', sans-serif; ";
+    $style .= "font-size: " . absint($atts['size']) . "px; ";
+    $style .= "font-weight: " . esc_attr($atts['weight']) . "; ";
+    $style .= "color: " . esc_attr($atts['color']) . ";";
+
+    return '<span style="' . $style . '">' . do_shortcode($atts['content']) . '</span>';
+}
+add_shortcode('cad_font', 'cad_custom_font_shortcode');
+
+
+// ============================================================================
+// 39.  BEAVER BUILDER POST GRID - DISPLAY ACF SHORT TITLE
+// ============================================================================
+
+// First, remove your old filters to avoid conflicts
+remove_filter( 'the_title', 'mt_add_acf_short_title_after_title' );
+remove_filter( 'fl_builder_post_grid_after_title', 'mt_bb_add_acf_short_title' );
+
+// Solution 1: Replace post title with short title - ONLY IN BEAVER BUILDER GRID
+add_filter( 'the_title', 'mt_bb_replace_title_with_short_title', 10, 2 );
+function mt_bb_replace_title_with_short_title( $title, $post_id ) {
+    global $post;
+    
+    // Only on frontend
+    if ( is_admin() ) {
+        return $title;
+    }
+    
+    // Only for posts
+    if ( get_post_type( $post_id ) !== 'post' ) {
+        return $title;
+    }
+    
+    // Check if we're in a post loop (not single post page)
+    if ( is_singular( 'post' ) ) {
+        return $title;
+    }
+    
+    // Check ACF exists
+    if ( ! function_exists( 'get_field' ) ) {
+        return $title;
+    }
+    
+    // Get the short title
+    $short_title = get_field( 'short_title', $post_id );
+    if ( empty( $short_title ) ) {
+        return $title;
+    }
+    
+    // Prevent infinite loop
+    if ( strpos( $title, 'fl-post-short-title' ) !== false ) {
+        return $title;
+    }
+    
+    // OPTION A: REPLACE title completely with short title (only in grids)
+    return '<span class="fl-post-short-title">' . esc_html( $short_title ) . '</span>';
+    
+    // OPTION B: APPEND short title after original title
+    // return $title . ' <span class="fl-post-short-title">' . esc_html( $short_title ) . '</span>';
+    
+    // OPTION C: PREPEND short title before original title
+    // return '<span class="fl-post-short-title">' . esc_html( $short_title ) . '</span> ' . $title;
 }

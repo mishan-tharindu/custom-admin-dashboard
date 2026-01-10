@@ -1,0 +1,23 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "cad/alert-box",
+  "version": "1.0.0",
+  "title": "Custom Alert Box",
+  "category": "widgets",
+  "icon": "warning",
+  "description": "A simple alert box for your content.",
+  "attributes": {
+    "message": {
+      "type": "string",
+      "default": "Important Notice!"
+    },
+    "alertType": {
+      "type": "string",
+      "default": "info"
+    }
+  },
+  "editorScript": "file:./index.js",
+  "style": "file:./style.css",
+  "render": "file:./render.php"
+}

@@ -1,0 +1,17 @@
+/* Base styles */
+.cad-photo-caption-block {
+    margin-top: 10px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+    text-align: center; /* Captions usually look good centered */
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+.cad-photo-caption-block p {
+    margin: 0;
+    font-size: 14px;
+    color: #666;
+    font-style: italic; /* Italicize captions for emphasis */
+    font-family: 'Mt MV Waheed';
+}
+
