@@ -531,25 +531,25 @@ function wwmt_time_ago($post_id = null)
 
     if ($time_diff < $minute) {
         $count = floor($time_diff);
-        $output = ($count <= 1) ? 'just now' : $count . ' sec ago';
+        $output = ($count <= 1) ? 'just now' : $count . ' sec';
     } elseif ($time_diff < $hour) {
         $count = floor($time_diff / $minute);
-        $output = $count . ' min' . ($count > 1 ? 's' : '') . ' ago';
+        $output = $count . ' min' . ($count > 1 ? 's' : '') . '';
     } elseif ($time_diff < $day) {
         $count = floor($time_diff / $hour);
-        $output = $count . ' hour' . ($count > 1 ? 's' : '') . ' ago';
+        $output = $count . ' hrs' . ($count > 1 ? 's' : '') . '';
     } elseif ($time_diff < $week) {
         $count = floor($time_diff / $day);
-        $output = $count . ' day' . ($count > 1 ? 's' : '') . ' ago';
+        $output = $count . ' day' . ($count > 1 ? 's' : '') . '';
     } elseif ($time_diff < $month) {
         $count = floor($time_diff / $week);
-        $output = $count . ' week' . ($count > 1 ? 's' : '') . ' ago';
+        $output = $count . ' week' . ($count > 1 ? 's' : '') . '';
     } elseif ($time_diff < $year) {
         $count = floor($time_diff / $month);
-        $output = $count . ' month' . ($count > 1 ? 's' : '') . ' ago';
+        $output = $count . ' month' . ($count > 1 ? 's' : '') . '';
     } else {
         $count = floor($time_diff / $year);
-        $output = $count . ' year' . ($count > 1 ? 's' : '') . ' ago';
+        $output = $count . ' year' . ($count > 1 ? 's' : '') . '';
     }
 
     // Return The Result
@@ -1794,14 +1794,17 @@ function restrict_author_publish_gutenberg()
 // 36.  post URL as Post ID
 // ============================================================================
 // Add rewrite rule for post IDs
-add_action('init', 'custom_post_id_rewrite_rule');
+// add_action('init', 'custom_post_id_rewrite_rule');
+
+// This make some issue with other plugins, so commented out for now
+
 function custom_post_id_rewrite_rule()
 {
     add_rewrite_rule('^([0-9]+)/?$', 'index.php?p=$1', 'top');
 }
 
 // Filter to change post URLs
-add_filter('post_link', 'custom_post_url_by_id', 10, 2);
+// add_filter('post_link', 'custom_post_url_by_id', 10, 2);
 function custom_post_url_by_id($permalink, $post)
 {
     if ($post->post_type === 'post') {
