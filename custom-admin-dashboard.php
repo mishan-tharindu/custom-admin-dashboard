@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Custom Admin Dashboard
  * Description: A custom plugin to modify and clean up the WordPress admin dashboard. [wwmt_time_ago] or [wwmt_time_ago icon="clock"], [post_image_count], [date_weather]
- * Version: 1.8.4
+ * Version: 1.8.5
  * Author: TechM
  * Author URI: https://yourwebsite.com
  * Text Domain: custom-admin-dashboard
@@ -537,7 +537,7 @@ function wwmt_time_ago($post_id = null)
         $output = $count . ' min' . ($count > 1 ? 's' : '') . '';
     } elseif ($time_diff < $day) {
         $count = floor($time_diff / $hour);
-        $output = $count . ' hrs' . ($count > 1 ? 's' : '') . '';
+        $output = $count . ' hr' . ($count > 1 ? 's' : '') . '';
     } elseif ($time_diff < $week) {
         $count = floor($time_diff / $day);
         $output = $count . ' day' . ($count > 1 ? 's' : '') . '';
@@ -581,8 +581,8 @@ function wwmt_time_ago_shortcode($atts)
     $label_text = sanitize_text_field($atts['text']);
 
     $output = '<span class="wwmt-time-ago-shortcode">';
-    $output .= '<i class="far ' . esc_attr($icon_class) . '"></i> ';
     $output .= '<span class="time-label">' . esc_html($label_text) . '</span> ';
+    $output .= '<i class="far ' . esc_attr($icon_class) . '"></i> ';
     $output .= '<strong>' . $time_ago . '</strong>';
     $output .= '</span>';
 
@@ -1391,31 +1391,64 @@ add_action('save_post', 'my_custom_plugin_set_default_thumbnail');
 
 function date_with_live_weather_shortcode()
 {
-
     // 1️⃣ Get city by IP
     $ip_response = wp_remote_get("http://ip-api.com/json/");
     if (is_wp_error($ip_response)) return "Location unavailable";
 
     $ip_data = json_decode(wp_remote_retrieve_body($ip_response), true);
-    $city = $ip_data['city'] ?? 'Colombo'; // fallback city
+    $city = $ip_data['city'] ?? 'Colombo';
 
     // 2️⃣ Weather API
-    $apiKey = "f524f4a3f66b684de434d97cabcd043c"; // OpenWeatherMap API key
+    $apiKey = "f524f4a3f66b684de434d97cabcd043c";
     $url = "https://api.openweathermap.org/data/2.5/weather?q=" . urlencode($city) . "&units=metric&appid=" . $apiKey;
 
     $weather_response = wp_remote_get($url);
-    if (is_wp_error($weather_response)) return "Weather unavailable";
+    if (is_wp_error($weather_response)) return "ދުވެ ތަޒްކިލް ނުފެނެއެވެ";
 
     $weather_data = json_decode(wp_remote_retrieve_body($weather_response), true);
-    if (!isset($weather_data['main']['temp'])) return "Weather data error";
+    if (!isset($weather_data['main']['temp'])) return "ދުވެ ތަޒްކިލް ސްވާލު";
 
     $temp = round($weather_data['main']['temp'], 1) . "°C";
 
-    // 3️⃣ Date
-    $date = date("l j F, Y");
+    // 3️⃣ Date in Dhivehi
+    $dhivehi_days = [
+        'Monday' => 'ހޯމަ',
+        'Tuesday' => 'ބުދަ',
+        'Wednesday' => 'ބުރާ',
+        'Thursday' => 'ބ્રεหુ',
+        'Friday' => 'ހুކުރު',
+        'Saturday' => 'ސެނާ',
+        'Sunday' => 'އާދިތްތަ'
+    ];
+
+    $dhivehi_months = [
+        'January' => 'ޖެނުވަރީ',
+        'February' => 'ފެބްރުވަރީ',
+        'March' => 'މާރިޗް',
+        'April' => 'އެޕްރީލް',
+        'May' => 'މޭ',
+        'June' => 'ޖޫން',
+        'July' => 'ޖުލައި',
+        'August' => 'އޮގަސްޓް',
+        'September' => 'ސެޕްޓެމްބަރް',
+        'October' => 'އޮކްޓޯބަރް',
+        'November' => 'ނޮވެމްބަރް',
+        'December' => 'ޑިސެމްބަރް'
+    ];
+
+    // Get date components
+    $day_name = date("l");
+    $day_num = date("j");
+    $month_name = date("F");
+    $year = date("Y");
+
+    $dhivehi_day = $dhivehi_days[$day_name] ?? $day_name;
+    $dhivehi_month = $dhivehi_months[$month_name] ?? $month_name;
+
+    $date = $dhivehi_day . " " . $day_num . " " . $dhivehi_month . " " . $year;
 
     // 4️⃣ Final output
-    return $temp . " " . $city . " — " . $date;
+    return $temp  . " — " . $date;
 }
 add_shortcode('date_weather', 'date_with_live_weather_shortcode');
 
