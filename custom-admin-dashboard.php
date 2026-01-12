@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Custom Admin Dashboard
  * Description: A custom plugin to modify and clean up the WordPress admin dashboard. [wwmt_time_ago] or [wwmt_time_ago icon="clock"], [post_image_count], [date_weather]
- * Version: 1.8.85
+ * Version: 1.8.9
  * Author: TechM
  * Author URI: https://yourwebsite.com
  * Text Domain: custom-admin-dashboard
@@ -946,9 +946,18 @@ function custom_login_form_shortcode()
                     wp_set_auth_cookie($user->ID, $remember);
                     do_action('wp_login', $user->user_login, $user);
 
-                    // Redirect to dashboard or referrer
-                    $redirect_url = isset($_POST['redirect_to']) ? esc_url_raw($_POST['redirect_to']) : admin_url();
-                    wp_safe_remote_post($redirect_url);
+                    // **MODIFIED: Redirect to return URL or dashboard**
+                    $redirect_url = admin_url(); // default
+                    
+                    // Check POST data first (from hidden field)
+                    if (isset($_POST['redirect_to']) && !empty($_POST['redirect_to'])) {
+                        $redirect_url = esc_url_raw($_POST['redirect_to']);
+                    } 
+                    // Fallback to GET parameter
+                    elseif (isset($_GET['redirect_to']) && !empty($_GET['redirect_to'])) {
+                        $redirect_url = esc_url_raw($_GET['redirect_to']);
+                    }
+                    
                     wp_redirect($redirect_url);
                     exit;
                 }
@@ -958,7 +967,14 @@ function custom_login_form_shortcode()
 
     // Get signup page - will trigger 404 if missing
     $signup_page = check_auth_page_exists('User Signup');
-    $signup_link = esc_url(get_page_link($signup_page->ID));
+    
+    // Add redirect_to parameter to signup link too
+    $current_url = isset($_GET['redirect_to']) ? esc_url($_GET['redirect_to']) : '';
+    if ($current_url) {
+        $signup_link = add_query_arg('redirect_to', urlencode($current_url), get_page_link($signup_page->ID));
+    } else {
+        $signup_link = get_page_link($signup_page->ID);
+    }
 
     ob_start();
 ?>
@@ -974,6 +990,11 @@ function custom_login_form_shortcode()
 
             <form method="POST" class="custom-login-form" novalidate>
                 <?php wp_nonce_field('custom_login_action', 'custom_login_nonce'); ?>
+
+                <!-- Preserve redirect URL -->
+                <?php if (isset($_GET['redirect_to'])) : ?>
+                    <input type="hidden" name="redirect_to" value="<?php echo esc_url($_GET['redirect_to']); ?>">
+                <?php endif; ?>
 
                 <div class="form-group">
                     <label for="username"><?php esc_html_e('Username or Email', 'custom-user-auth'); ?></label>
@@ -1013,7 +1034,7 @@ function custom_login_form_shortcode()
             </form>
 
             <div class="auth-footer">
-                <p><?php esc_html_e("Don't have an account?", 'custom-user-auth'); ?> <a href="<?php echo $signup_link; ?>"><?php esc_html_e('Sign up here', 'custom-user-auth'); ?></a></p>
+                <p><?php esc_html_e("Don't have an account?", 'custom-user-auth'); ?> <a href="<?php echo esc_url($signup_link); ?>"><?php esc_html_e('Sign up here', 'custom-user-auth'); ?></a></p>
             </div>
         </div>
     </div>
@@ -1112,8 +1133,19 @@ function custom_signup_form_shortcode()
                         'Thank you for signing up! Your account has been created successfully.'
                     );
 
-                    // Redirect to dashboard
-                    wp_redirect(admin_url());
+                    // **MODIFIED: Redirect to return URL or dashboard**
+                    $redirect_url = admin_url(); // default
+                    
+                    // Check POST data first (from hidden field)
+                    if (isset($_POST['redirect_to']) && !empty($_POST['redirect_to'])) {
+                        $redirect_url = esc_url_raw($_POST['redirect_to']);
+                    } 
+                    // Fallback to GET parameter
+                    elseif (isset($_GET['redirect_to']) && !empty($_GET['redirect_to'])) {
+                        $redirect_url = esc_url_raw($_GET['redirect_to']);
+                    }
+                    
+                    wp_redirect($redirect_url);
                     exit;
                 }
             }
@@ -1138,6 +1170,11 @@ function custom_signup_form_shortcode()
 
             <form method="POST" class="custom-signup-form" novalidate>
                 <?php wp_nonce_field('custom_signup_action', 'custom_signup_nonce'); ?>
+                
+                <!-- Preserve redirect URL -->
+                <?php if (isset($_GET['redirect_to'])) : ?>
+                    <input type="hidden" name="redirect_to" value="<?php echo esc_url($_GET['redirect_to']); ?>">
+                <?php endif; ?>
 
                 <div class="form-row">
                     <div class="form-group form-group-half">
@@ -1223,7 +1260,7 @@ function custom_signup_form_shortcode()
 <?php
     return ob_get_clean();
 }
-add_shortcode('custom_signup_form', 'custom_signup_form_shortcode');
+add_shortcode('custom_signup_form', 'custom_signup_form_shortcode');;
 
 // ============================================================================
 // 22. ENQUEUE AUTH STYLES
@@ -1261,10 +1298,17 @@ function custom_login_page_redirect()
             return;
         }
 
-        // 3. Otherwise, redirect to custom login page
+        // 3. Otherwise, redirect to custom login page WITH redirect_to parameter preserved
         $login_page = get_page_by_title('User Login');
         if ($login_page) {
-            wp_redirect(get_page_link($login_page->ID));
+            $login_url = get_page_link($login_page->ID);
+            
+            // **FIX: Preserve the redirect_to parameter if it exists**
+            if (isset($_GET['redirect_to']) && !empty($_GET['redirect_to'])) {
+                $login_url = add_query_arg('redirect_to', urlencode($_GET['redirect_to']), $login_url);
+            }
+            
+            wp_redirect($login_url);
             exit;
         }
     }
@@ -1289,6 +1333,7 @@ function custom_logout_redirect($redirect_to, $requested_redirect_to, $user)
 }
 add_filter('logout_redirect', 'custom_logout_redirect', 10, 3);
 
+
 // ============================================================================
 // 25. RESTRICT DIRECT ACCESS TO WP-LOGIN
 // ============================================================================
@@ -1305,7 +1350,14 @@ function restrict_wp_login()
 
         $login_page = get_page_by_title('User Login');
         if ($login_page) {
-            wp_redirect(get_page_link($login_page->ID));
+            $login_url = get_page_link($login_page->ID);
+            
+            // **FIX: Preserve the redirect_to parameter if it exists**
+            if (isset($_GET['redirect_to']) && !empty($_GET['redirect_to'])) {
+                $login_url = add_query_arg('redirect_to', urlencode($_GET['redirect_to']), $login_url);
+            }
+            
+            wp_redirect($login_url);
             exit;
         }
     }
@@ -1353,6 +1405,45 @@ function custom_hide_admin_bar_for_non_admin()
     }
 }
 add_action('init', 'custom_hide_admin_bar_for_non_admin');
+
+// ============================================================================
+// 28A. RESTRICT DASHBOARD ACCESS BY USER ROLE
+// ============================================================================
+
+function restrict_dashboard_access_by_role()
+{
+    // Check if user is logged in
+    if (!is_user_logged_in()) {
+        return;
+    }
+
+    // Only restrict on admin pages (dashboard)
+    if (!is_admin() || wp_doing_ajax()) {
+        return;
+    }
+
+    // Get current user
+    $current_user = wp_get_current_user();
+
+    // Define allowed roles (can access dashboard)
+    $allowed_roles = array('administrator', 'editor', 'author');
+
+    // Check if user has any of the allowed roles
+    $has_access = false;
+    foreach ($allowed_roles as $role) {
+        if (in_array($role, (array) $current_user->roles)) {
+            $has_access = true;
+            break;
+        }
+    }
+
+    // If user doesn't have access, redirect to home page
+    if (!$has_access) {
+        wp_redirect(home_url());
+        exit;
+    }
+}
+add_action('admin_init', 'restrict_dashboard_access_by_role');
 
 // ============================================================================
 // 29. AUTO-SET DEFAULT FEATURED IMAGE
@@ -3295,9 +3386,10 @@ add_action('comment_form_before', 'add_login_register_buttons');
 function add_login_register_buttons() {
     // Only show buttons if user is NOT logged in
     if (!is_user_logged_in()) {
-        // Your custom registration URL
-        $registration_url = home_url('/user-signup/');
-        $login_url = wp_login_url(get_permalink());
+        // Your custom registration URL with return URL parameter
+        $current_url = get_permalink();
+        $registration_url = add_query_arg('redirect_to', urlencode($current_url), home_url('/user-signup/'));
+        $login_url = wp_login_url($current_url);
         
         echo '<div class="comment-auth-buttons" style="margin-bottom: 20px;">';
         echo '<p style="margin-bottom: 15px;"><strong>You must be logged in to comment.</strong></p>';
