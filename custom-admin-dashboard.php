@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Custom Admin Dashboard
  * Description: A custom plugin to modify and clean up the WordPress admin dashboard. [wwmt_time_ago] or [wwmt_time_ago icon="clock"], [post_image_count], [date_weather]
- * Version: 1.8.8
+ * Version: 1.8.85
  * Author: TechM
  * Author URI: https://yourwebsite.com
  * Text Domain: custom-admin-dashboard
@@ -3169,3 +3169,177 @@ function wwmt_ad_shortcode($atts)
     return wwmt_display_ad($atts['space_id']);
 }
 add_action('wp_head', 'wwmt_ads_frontend_styles');
+
+// ============================================================================
+// 44.  CUSTOMIZE COMMENT FORM - REMOVE EMAIL/WEBSITE, ADD LOGIN/REGISTER BUTTONS
+// ============================================================================
+
+// Remove email and website fields from comment form - STRONGER METHOD
+add_filter('comment_form_default_fields', 'remove_comment_fields', 999);
+function remove_comment_fields($fields) {
+    // Remove email field
+    unset($fields['email']);
+    
+    // Remove website/URL field
+    unset($fields['url']);
+    
+    return $fields;
+}
+
+// Alternative method - hide fields with CSS if filter doesn't work
+add_action('wp_head', 'hide_comment_fields_css');
+function hide_comment_fields_css() {
+    echo '<style>
+        /* Hide email and website fields */
+        #fl-email,
+        label[for="fl-email"],
+        #fl-url,
+        label[for="fl-url"],
+        .comment-form-email,
+        .comment-form-url {
+            display: none !important;
+        }
+        
+        /* Disable comment form for non-logged-in users */
+        body:not(.logged-in) #fl-comment-form textarea,
+        body:not(.logged-in) #fl-comment-form input[type="text"],
+        body:not(.logged-in) #fl-comment-form input[type="submit"] {
+            opacity: 0.5;
+            pointer-events: none;
+            cursor: not-allowed;
+        }
+        
+        /* Style the must login message */
+        .must-log-in-message {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            color: #856404;
+        }
+        
+        .must-log-in-message a {
+            color: #0073aa;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+    </style>';
+}
+
+// Remove fields using JavaScript as backup
+add_action('wp_footer', 'remove_fields_with_js');
+function remove_fields_with_js() {
+    ?>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Remove email field and label
+        var emailInput = document.getElementById('fl-email');
+        var emailLabel = document.querySelector('label[for="fl-email"]');
+        if(emailInput) emailInput.closest('br')?.previousElementSibling?.remove();
+        if(emailInput) emailInput.nextElementSibling?.remove();
+        if(emailInput) emailInput.remove();
+        if(emailLabel) emailLabel.remove();
+        
+        // Remove website field and label
+        var urlInput = document.getElementById('fl-url');
+        var urlLabel = document.querySelector('label[for="fl-url"]');
+        if(urlInput) urlInput.closest('br')?.previousElementSibling?.remove();
+        if(urlInput) urlInput.nextElementSibling?.remove();
+        if(urlInput) urlInput.remove();
+        if(urlLabel) urlLabel.remove();
+        
+        // Disable comment form if user is not logged in
+        var isLoggedIn = document.body.classList.contains('logged-in');
+        if (!isLoggedIn) {
+            var commentForm = document.getElementById('fl-comment-form');
+            if (commentForm) {
+                // Disable all form inputs
+                var inputs = commentForm.querySelectorAll('input, textarea');
+                inputs.forEach(function(input) {
+                    input.disabled = true;
+                    input.style.cursor = 'not-allowed';
+                });
+                
+                // Prevent form submission
+                commentForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    alert('You must be logged in to post a comment. Please login or register first.');
+                    return false;
+                });
+            }
+        }
+    });
+    </script>
+    <?php
+}
+
+// Require login to comment - disable form for non-logged-in users
+add_filter('comment_form_defaults', 'require_login_to_comment');
+function require_login_to_comment($defaults) {
+    if (!is_user_logged_in()) {
+        $defaults['must_log_in'] = '<div class="must-log-in-message">' .
+            sprintf(
+                __('You must be <a href="%1$s">logged in</a> to post a comment. Don\'t have an account? <a href="%2$s">Register here</a>.'),
+                wp_login_url(get_permalink()),
+                home_url('/user-signup/')
+            ) .
+            '</div>';
+        $defaults['logged_in_as'] = '';
+    }
+    return $defaults;
+}
+
+// Add login and registration buttons before comment form
+add_action('comment_form_before', 'add_login_register_buttons');
+function add_login_register_buttons() {
+    // Only show buttons if user is NOT logged in
+    if (!is_user_logged_in()) {
+        // Your custom registration URL
+        $registration_url = home_url('/user-signup/');
+        $login_url = wp_login_url(get_permalink());
+        
+        echo '<div class="comment-auth-buttons" style="margin-bottom: 20px;">';
+        echo '<p style="margin-bottom: 15px;"><strong>You must be logged in to comment.</strong></p>';
+        echo '<a href="' . esc_url($login_url) . '" class="btn btn-primary" style="margin-right: 10px;">Login</a>';
+        echo '<a href="' . esc_url($registration_url) . '" class="btn btn-secondary">Register</a>';
+        echo '</div>';
+    }
+}
+
+// Custom CSS for styling
+add_action('wp_head', 'comment_form_custom_css');
+function comment_form_custom_css() {
+    echo '<style>
+        .comment-auth-buttons {
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .comment-auth-buttons .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        .comment-auth-buttons .btn-primary {
+            background-color: #0073aa;
+            color: white;
+            border: 1px solid #0073aa;
+        }
+        .comment-auth-buttons .btn-primary:hover {
+            background-color: #005177;
+        }
+        .comment-auth-buttons .btn-secondary {
+            background-color: #fff;
+            color: #0073aa;
+            border: 1px solid #0073aa;
+        }
+        .comment-auth-buttons .btn-secondary:hover {
+            background-color: #0073aa;
+            color: white;
+        }
+    </style>';
+}
