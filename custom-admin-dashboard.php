@@ -1957,12 +1957,12 @@ function cad_custom_fonts_section_html()
                 ?>
                         <tr class="cad-font-row">
                             <td>
-                                <input type="text" 
-                                       name="cad_custom_fonts[<?php echo $index; ?>][name]" 
-                                       value="<?php echo $font_family; ?>" 
-                                       class="cad-font-name-input widefat" 
-                                       placeholder="Font Name" 
-                                       required>
+                                <input type="text"
+                                    name="cad_custom_fonts[<?php echo $index; ?>][name]"
+                                    value="<?php echo $font_family; ?>"
+                                    class="cad-font-name-input widefat"
+                                    placeholder="Font Name"
+                                    required>
                             </td>
                             <td>
                                 <style>
@@ -1992,12 +1992,12 @@ function cad_custom_fonts_section_html()
                             </td>
                             <td>
                                 <div style="display: flex; gap: 5px;">
-                                    <input type="text" 
-                                           name="cad_custom_fonts[<?php echo $index; ?>][url]" 
-                                           id="cad_font_url_<?php echo $index; ?>" 
-                                           value="<?php echo $font_url; ?>" 
-                                           class="cad-font-url-input widefat"
-                                           required>
+                                    <input type="text"
+                                        name="cad_custom_fonts[<?php echo $index; ?>][url]"
+                                        id="cad_font_url_<?php echo $index; ?>"
+                                        value="<?php echo $font_url; ?>"
+                                        class="cad-font-url-input widefat"
+                                        required>
                                     <button type="button" class="cad-upload-font-btn button" data-target="#cad_font_url_<?php echo $index; ?>">Upload</button>
                                 </div>
                             </td>
@@ -2005,7 +2005,7 @@ function cad_custom_fonts_section_html()
                                 <button type="button" class="button button-link-delete cad-remove-row"><span class="dashicons dashicons-trash"></span></button>
                             </td>
                         </tr>
-                    <?php endforeach;
+                <?php endforeach;
                 endif; ?>
             </tbody>
         </table>
@@ -2086,12 +2086,12 @@ function cad_custom_fonts_section_html()
             $(document).on('click', '.cad-upload-font-btn', function(e) {
                 e.preventDefault();
                 var targetInput = $(this).data('target');
-                
+
                 if (frame) {
                     frame.open();
                     return;
                 }
-                
+
                 frame = wp.media({
                     title: 'Select Font',
                     button: {
@@ -2102,12 +2102,12 @@ function cad_custom_fonts_section_html()
                         type: ['application/x-font-ttf', 'application/x-font-woff', 'application/font-woff', 'application/font-woff2', 'application/x-font-opentype']
                     }
                 });
-                
+
                 frame.on('select', function() {
                     var attachment = frame.state().get('selection').first().toJSON();
                     $(targetInput).val(attachment.url).trigger('change');
                 });
-                
+
                 frame.open();
             });
 
@@ -2163,7 +2163,7 @@ function cad_generate_font_css()
             $name = esc_attr($font['name']);
             $url = esc_url($font['url']);
             $weight = esc_attr($font['weight']);
-            
+
             $css .= "@font-face {\n";
             $css .= "    font-family: '{$name}';\n";
             $css .= "    src: url('{$url}');\n";
@@ -2225,8 +2225,8 @@ function cad_add_fonts_to_classic_editor($init_array)
     $fonts = get_option('cad_custom_fonts', array());
     if (empty($fonts) || !is_array($fonts)) return $init_array;
 
-    $font_formats = isset($init_array['font_formats']) 
-        ? $init_array['font_formats'] 
+    $font_formats = isset($init_array['font_formats'])
+        ? $init_array['font_formats']
         : 'Andale Mono=andale mono,times;Arial=arial,helvetica,sans-serif;Arial Black=arial black,avant garde;Book Antiqua=book antiqua,palatino;Comic Sans MS=comic sans ms,sans-serif;Courier New=courier new,courier;Georgia=georgia,palatino;Impact=impact,chicago;Symbol=symbol;Tahoma=tahoma,arial,helvetica,sans-serif;Terminal=terminal,monaco;Times New Roman=times new roman,times;Trebuchet MS=trebuchet ms,geneva;Verdana=verdana,geneva;Webdings=webdings;Wingdings=wingdings,zapf dingbats';
 
     foreach ($fonts as $font) {
@@ -2552,51 +2552,52 @@ add_shortcode('cad_font', 'cad_custom_font_shortcode');
 // ============================================================================
 
 // First, remove your old filters to avoid conflicts
-remove_filter( 'the_title', 'mt_add_acf_short_title_after_title' );
-remove_filter( 'fl_builder_post_grid_after_title', 'mt_bb_add_acf_short_title' );
+remove_filter('the_title', 'mt_add_acf_short_title_after_title');
+remove_filter('fl_builder_post_grid_after_title', 'mt_bb_add_acf_short_title');
 
 // Solution 1: Replace post title with short title - ONLY IN BEAVER BUILDER GRID
-add_filter( 'the_title', 'mt_bb_replace_title_with_short_title', 10, 2 );
-function mt_bb_replace_title_with_short_title( $title, $post_id ) {
+add_filter('the_title', 'mt_bb_replace_title_with_short_title', 10, 2);
+function mt_bb_replace_title_with_short_title($title, $post_id)
+{
     global $post;
-    
+
     // Only on frontend
-    if ( is_admin() ) {
+    if (is_admin()) {
         return $title;
     }
-    
+
     // Only for posts
-    if ( get_post_type( $post_id ) !== 'post' ) {
+    if (get_post_type($post_id) !== 'post') {
         return $title;
     }
-    
+
     // Check if we're in a post loop (not single post page)
-    if ( is_singular( 'post' ) ) {
+    if (is_singular('post')) {
         return $title;
     }
-    
+
     // Check ACF exists
-    if ( ! function_exists( 'get_field' ) ) {
+    if (! function_exists('get_field')) {
         return $title;
     }
-    
+
     // Get the short title
-    $short_title = get_field( 'short_title', $post_id );
-    if ( empty( $short_title ) ) {
+    $short_title = get_field('short_title', $post_id);
+    if (empty($short_title)) {
         return $title;
     }
-    
+
     // Prevent infinite loop
-    if ( strpos( $title, 'fl-post-short-title' ) !== false ) {
+    if (strpos($title, 'fl-post-short-title') !== false) {
         return $title;
     }
-    
+
     // OPTION A: REPLACE title completely with short title (only in grids)
-    return '<span class="fl-post-short-title">' . esc_html( $short_title ) . '</span>';
-    
+    return '<span class="fl-post-short-title">' . esc_html($short_title) . '</span>';
+
     // OPTION B: APPEND short title after original title
     // return $title . ' <span class="fl-post-short-title">' . esc_html( $short_title ) . '</span>';
-    
+
     // OPTION C: PREPEND short title before original title
     // return '<span class="fl-post-short-title">' . esc_html( $short_title ) . '</span> ' . $title;
 }
@@ -2607,17 +2608,19 @@ function mt_bb_replace_title_with_short_title( $title, $post_id ) {
 // Add this code to your theme's functions.php or create a custom plugin
 
 // Dhivehi numeral mapping
-function convert_to_dhivehi_numerals($text) {
+function convert_to_dhivehi_numerals($text)
+{
     $english = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
     $dhivehi = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
     // Dhivehi-Thaana numerals (using Unicode)
     $dhivehi = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
-    
+
     return str_replace($english, $dhivehi, $text);
 }
 
 // Dhivehi month names
-function get_dhivehi_month($month_name) {
+function get_dhivehi_month($month_name)
+{
     $months = array(
         'January'   => 'ޖެނުވަރީ',
         'February'  => 'ފެބްރުވަރީ',
@@ -2632,7 +2635,7 @@ function get_dhivehi_month($month_name) {
         'November'  => 'ނޮވެンބަރ',
         'December'  => 'ޑިސެンބަރ'
     );
-    
+
     return isset($months[$month_name]) ? $months[$month_name] : $month_name;
 }
 
@@ -2640,10 +2643,11 @@ function get_dhivehi_month($month_name) {
 add_filter('the_time', 'convert_post_date_to_dhivehi', 10, 2);
 add_filter('get_the_date', 'convert_post_date_to_dhivehi', 10, 2);
 
-function convert_post_date_to_dhivehi($the_time, $format = '') {
+function convert_post_date_to_dhivehi($the_time, $format = '')
+{
     // Work with the already formatted time passed to the filter
     $date_string = $the_time;
-    
+
     // Replace month names with Dhivehi equivalents
     $months = array(
         'January'   => 'ޖެނުވަރީ',
@@ -2659,16 +2663,16 @@ function convert_post_date_to_dhivehi($the_time, $format = '') {
         'November'  => 'ނޮވެンބަރ',
         'December'  => 'ޑިސެنބަރ'
     );
-    
+
     foreach ($months as $english => $dhivehi) {
         $date_string = str_replace($english, $dhivehi, $date_string);
     }
-    
+
     // Convert numerals to Dhivehi
     $english_nums = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
     $dhivehi_nums = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
     $date_string = str_replace($english_nums, $dhivehi_nums, $date_string);
-    
+
     return $date_string;
 }
 
@@ -2676,57 +2680,58 @@ function convert_post_date_to_dhivehi($the_time, $format = '') {
 // 41.  ENFORCE COMMENT LENGTH LIMITS
 // ============================================================================
 
-add_action( 'wp_footer', 'mt_bb_comment_word_limit' );
-function mt_bb_comment_word_limit() {
-    if ( ! is_singular() || ! comments_open() ) return;
-    ?>
+add_action('wp_footer', 'mt_bb_comment_word_limit');
+function mt_bb_comment_word_limit()
+{
+    if (! is_singular() || ! comments_open()) return;
+?>
     <script>
-    document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
 
-        const textarea = document.getElementById('fl-comment');
-        const submitBtn = document.getElementById('fl-comment-form-submit');
-        if (!textarea || !submitBtn) return;
+            const textarea = document.getElementById('fl-comment');
+            const submitBtn = document.getElementById('fl-comment-form-submit');
+            if (!textarea || !submitBtn) return;
 
-        const MAX_WORDS = 150;
+            const MAX_WORDS = 150;
 
-        // Create counter
-        const counter = document.createElement('div');
-        counter.id = 'bb-comment-word-count';
-        counter.style.marginTop = '6px';
-        counter.style.fontSize = '13px';
-        counter.style.color = '#666';
-        counter.textContent = `0 / ${MAX_WORDS} words`;
+            // Create counter
+            const counter = document.createElement('div');
+            counter.id = 'bb-comment-word-count';
+            counter.style.marginTop = '6px';
+            counter.style.fontSize = '13px';
+            counter.style.color = '#666';
+            counter.textContent = `0 / ${MAX_WORDS} words`;
 
-        textarea.insertAdjacentElement('afterend', counter);
+            textarea.insertAdjacentElement('afterend', counter);
 
-        function updateWordCount() {
-            let words = textarea.value.trim().split(/\s+/).filter(Boolean);
+            function updateWordCount() {
+                let words = textarea.value.trim().split(/\s+/).filter(Boolean);
 
-            if (words.length > MAX_WORDS) {
-                words = words.slice(0, MAX_WORDS);
-                textarea.value = words.join(' ');
+                if (words.length > MAX_WORDS) {
+                    words = words.slice(0, MAX_WORDS);
+                    textarea.value = words.join(' ');
+                }
+
+                const count = words.length;
+                counter.textContent = `${count} / ${MAX_WORDS} words`;
+
+                // Visual feedback
+                if (count >= MAX_WORDS) {
+                    counter.style.color = '#d63638'; // WP red
+                } else {
+                    counter.style.color = '#666';
+                }
+
+                // Enable / Disable submit
+                submitBtn.disabled = (count === 0 || count > MAX_WORDS);
             }
 
-            const count = words.length;
-            counter.textContent = `${count} / ${MAX_WORDS} words`;
+            textarea.addEventListener('input', updateWordCount);
+            updateWordCount(); // Init
 
-            // Visual feedback
-            if (count >= MAX_WORDS) {
-                counter.style.color = '#d63638'; // WP red
-            } else {
-                counter.style.color = '#666';
-            }
-
-            // Enable / Disable submit
-            submitBtn.disabled = (count === 0 || count > MAX_WORDS);
-        }
-
-        textarea.addEventListener('input', updateWordCount);
-        updateWordCount(); // Init
-
-    });
+        });
     </script>
-    <?php
+<?php
 }
 
 // ============================================================================
@@ -2735,10 +2740,11 @@ function mt_bb_comment_word_limit() {
 
 // Hook to enqueue scripts and styles
 add_action('wp_enqueue_scripts', 'emoji_reactions_enqueue_assets');
-function emoji_reactions_enqueue_assets() {
+function emoji_reactions_enqueue_assets()
+{
     wp_enqueue_script('emoji-reactions', plugin_dir_url(__FILE__) . 'emoji-reactions.js', ['jquery'], '1.0', true);
     wp_enqueue_style('emoji-reactions', plugin_dir_url(__FILE__) . 'emoji-reactions.css', [], '1.0');
-    
+
     // Localize script to pass AJAX URL
     wp_localize_script('emoji-reactions', 'emojiReactionsObj', [
         'ajaxUrl' => admin_url('admin-ajax.php'),
@@ -2748,9 +2754,10 @@ function emoji_reactions_enqueue_assets() {
 
 // Display emoji reactions below each comment
 add_filter('comment_text', 'emoji_reactions_display', 10, 3);
-function emoji_reactions_display($comment_text, $comment, $args) {
+function emoji_reactions_display($comment_text, $comment, $args)
+{
     $comment_id = $comment->comment_ID;
-    
+
     // Define emoji reactions
     $emojis = [
         'like' => '👍',
@@ -2759,30 +2766,31 @@ function emoji_reactions_display($comment_text, $comment, $args) {
         'wow' => '😮',
         'heart' => '❤️'
     ];
-    
+
     // Get user identifier (IP or user ID)
     $user_id = get_user_id_for_reaction();
-    
+
     $html = '<div class="emoji-reactions-container" data-comment-id="' . esc_attr($comment_id) . '">';
-    
+
     foreach ($emojis as $key => $emoji) {
         $count = get_emoji_reaction_count($comment_id, $key);
         $user_reacted = has_user_reacted($comment_id, $key, $user_id);
         $active_class = $user_reacted ? 'active' : '';
-        
+
         $html .= '<button class="emoji-btn ' . $active_class . '" data-emoji="' . esc_attr($key) . '" title="' . esc_attr(ucfirst($key)) . '">';
         $html .= '<span class="emoji-icon">' . $emoji . '</span>';
         $html .= '<span class="emoji-count">' . $count . '</span>';
         $html .= '</button>';
     }
-    
+
     $html .= '</div>';
-    
+
     return $comment_text . $html;
 }
 
 // Get user identifier (IP address for non-logged-in users, user ID for logged-in)
-function get_user_id_for_reaction() {
+function get_user_id_for_reaction()
+{
     if (is_user_logged_in()) {
         return 'user_' . get_current_user_id();
     } else {
@@ -2791,67 +2799,70 @@ function get_user_id_for_reaction() {
 }
 
 // Check if user has already reacted with this emoji
-function has_user_reacted($comment_id, $emoji_type, $user_id) {
+function has_user_reacted($comment_id, $emoji_type, $user_id)
+{
     $reactions = get_comment_meta($comment_id, 'emoji_reactions_users', true);
-    
+
     if (!is_array($reactions)) {
         return false;
     }
-    
+
     if (!isset($reactions[$emoji_type])) {
         return false;
     }
-    
+
     return in_array($user_id, $reactions[$emoji_type]);
 }
 
 // Get reaction count for a comment
-function get_emoji_reaction_count($comment_id, $emoji_type) {
+function get_emoji_reaction_count($comment_id, $emoji_type)
+{
     $reactions = get_comment_meta($comment_id, 'emoji_reactions_users', true);
-    
+
     if (!is_array($reactions)) {
         return 0;
     }
-    
+
     return isset($reactions[$emoji_type]) ? count($reactions[$emoji_type]) : 0;
 }
 
 // AJAX handler for adding/removing reactions
 add_action('wp_ajax_emoji_reaction', 'handle_emoji_reaction');
 add_action('wp_ajax_nopriv_emoji_reaction', 'handle_emoji_reaction');
-function handle_emoji_reaction() {
+function handle_emoji_reaction()
+{
     check_ajax_referer('emoji_reactions_nonce', 'nonce');
-    
+
     $comment_id = intval($_POST['comment_id']);
     $emoji_type = sanitize_text_field($_POST['emoji_type']);
     $user_id = get_user_id_for_reaction();
-    
+
     // Validate emoji type
     $allowed_emojis = ['like', 'happy', 'angry', 'wow', 'heart'];
     if (!in_array($emoji_type, $allowed_emojis)) {
         wp_send_json_error('Invalid emoji type');
     }
-    
+
     // Verify comment exists
     $comment = get_comment($comment_id);
     if (!$comment) {
         wp_send_json_error('Comment not found');
     }
-    
+
     // Get current reactions
     $reactions = get_comment_meta($comment_id, 'emoji_reactions_users', true);
     if (!is_array($reactions)) {
         $reactions = [];
     }
-    
+
     // Initialize emoji array if not exists
     if (!isset($reactions[$emoji_type])) {
         $reactions[$emoji_type] = [];
     }
-    
+
     // Toggle: if user already reacted, remove it; otherwise add it
     $user_key = array_search($user_id, $reactions[$emoji_type]);
-    
+
     if ($user_key !== false) {
         // User already reacted, remove the reaction
         unset($reactions[$emoji_type][$user_key]);
@@ -2861,19 +2872,19 @@ function handle_emoji_reaction() {
         $reactions[$emoji_type][] = $user_id;
         $reacted = true;
     }
-    
+
     // Re-index array
     $reactions[$emoji_type] = array_values($reactions[$emoji_type]);
-    
+
     // Save reactions
     update_comment_meta($comment_id, 'emoji_reactions_users', $reactions);
-    
+
     // Build reaction counts response
     $reaction_counts = [];
     foreach ($allowed_emojis as $emoji) {
         $reaction_counts[$emoji] = isset($reactions[$emoji]) ? count($reactions[$emoji]) : 0;
     }
-    
+
     // Return updated data
     wp_send_json_success([
         'reactions' => $reaction_counts,
@@ -2882,3 +2893,279 @@ function handle_emoji_reaction() {
         'reacted' => $reacted
     ]);
 }
+
+// ============================================================================
+// 43.  ADMIN PAGE FOR MANAGING ADVERTISEMENT SPACES
+// ============================================================================
+
+/**
+ * Advertisement Space Manager Plugin
+ * Handles all image types including GIFs for advertisement spaces
+ */
+
+// Hook to register admin menu and assets
+add_action('admin_menu', 'wwmt_ads_register_admin_page');
+add_action('admin_enqueue_scripts', 'wwmt_ads_enqueue_scripts');
+add_action('wp_ajax_wwmt_upload_ad_image', 'wwmt_handle_ad_image_upload');
+add_action('wp_ajax_wwmt_delete_ad_image', 'wwmt_handle_ad_image_delete');
+add_action('wp_head', 'wwmt_ads_frontend_styles');
+add_shortcode('wwmt_ad', 'wwmt_ad_shortcode');
+
+/**
+ * Register admin menu page
+ */
+function wwmt_ads_register_admin_page()
+{
+    add_submenu_page(
+        'my-plugin-slug',
+        'Advertisement Spaces',
+        'Advertisement Spaces',
+        'manage_options',
+        'wwmt-ad-manager',
+        'wwmt_ads_render_admin_page'
+    );
+}
+
+/**
+ * Enqueue admin scripts and styles
+ */
+function wwmt_ads_enqueue_scripts($hook)
+{
+    if ($hook !== 'custom-plugin_page_wwmt-ad-manager') {
+        return;
+    }
+
+    // Enqueue media files
+    wp_enqueue_media();
+
+    // Enqueue jQuery (no dependency needed, it's always available in admin)
+    wp_enqueue_script('jquery');
+
+    // Enqueue our custom script
+    wp_enqueue_script(
+        'wwmt-ad-manager',
+        plugin_dir_url(__FILE__) . 'js/ad-manager.js',
+        array('jquery'),
+        '1.0.0',
+        true
+    );
+
+    // Localize script to pass PHP data to JavaScript
+    wp_localize_script('wwmt-ad-manager', 'wwmtAdManager', array(
+        'nonce' => wp_create_nonce('wwmt_ad_nonce'),
+        'ajaxUrl' => admin_url('admin-ajax.php')
+    ));
+
+    // Enqueue styles
+    wp_enqueue_style(
+        'wwmt-ad-manager',
+        plugin_dir_url(__FILE__) . 'css/ad-manager.css',
+        array(),
+        '1.0.0'
+    );
+}
+
+/**
+ * Render admin page
+ */
+function wwmt_ads_render_admin_page()
+{
+    if (!current_user_can('manage_options')) {
+        wp_die('Unauthorized access');
+    }
+
+    $ad_spaces = [
+        'wwmt-advertisment-space-01' => 'Advertisement Space 01',
+        'wwmt-advertisment-space-02' => 'Advertisement Space 02',
+        'wwmt-advertisment-space-03' => 'Advertisement Space 03',
+        'wwmt-advertisment-space-04' => 'Advertisement Space 04',
+        'wwmt-advertisment-space-05' => 'Advertisement Space 05',
+    ];
+
+
+?>
+    <div class="wrap">
+        <h1>Advertisement Spaces Manager</h1>
+        <p class="wwmt-add-label-description">Manage your advertisement spaces use this shortcode [wwmt_ad space_id="wwmt-advertisment-space-01"] example. 
+            We already provide a shortcode for each advertisement space. We pre build 5 spaces. You can use them directly in posts, pages, or widgets.</p>
+        <p>Shortcode examples:<br>
+            [wwmt_ad space_id="wwmt-advertisment-space-01"], 
+            [wwmt_ad space_id="wwmt-advertisment-space-02"], 
+            [wwmt_ad space_id="wwmt-advertisment-space-03"], 
+            [wwmt_ad space_id="wwmt-advertisment-space-04"], 
+            [wwmt_ad space_id="wwmt-advertisment-space-05"]
+        </p>
+        <div class="wwmt-ads-container">
+            <?php foreach ($ad_spaces as $space_id => $label): ?>
+                <div class="wwmt-ad-space-card">
+                    <h2><?php echo esc_html($label); ?></h2>
+
+                    <div class="wwmt-ad-preview" id="preview-<?php echo esc_attr($space_id); ?>">
+                        <?php
+                        $current_image = get_option("wwmt_ad_image_{$space_id}");
+                        if ($current_image) {
+                            echo '<img src="' . esc_url($current_image) . '" alt="' . esc_attr($space_id) . '" />';
+                        } else {
+                            echo '<p class="no-image">No image set</p>';
+                        }
+                        ?>
+                    </div>
+
+                    <div class="wwmt-ad-url" id="url-<?php echo esc_attr($space_id); ?>">
+                        <label>Image URL:</label>
+                        <input type="text" readonly value="<?php echo esc_url(get_option("wwmt_ad_image_{$space_id}")); ?>" />
+                    </div>
+
+                    <div class="wwmt-ad-actions">
+                        <button type="button"
+                            class="button button-primary wwmt-upload-btn"
+                            data-space-id="<?php echo esc_attr($space_id); ?>">
+                            Upload / Change Image
+                        </button>
+
+                        <button type="button"
+                            class="button button-danger wwmt-delete-btn"
+                            data-space-id="<?php echo esc_attr($space_id); ?>"
+                            <?php echo !get_option("wwmt_ad_image_{$space_id}") ? 'disabled' : ''; ?>>
+                            Delete Image
+                        </button>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
+    <!-- Media Frame will be created by JavaScript -->
+    <script>
+        var wwmtCurrentSpaceId = null;
+    </script>
+<?php
+}
+
+/**
+ * Handle AJAX image upload
+ */
+function wwmt_handle_ad_image_upload()
+{
+    check_ajax_referer('wwmt_ad_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized access');
+    }
+
+    $space_id = sanitize_text_field($_POST['space_id']);
+    $attachment_id = intval($_POST['attachment_id']);
+
+    // Validate space_id
+    $valid_spaces = [
+        'wwmt-advertisment-space-01',
+        'wwmt-advertisment-space-02',
+        'wwmt-advertisment-space-03',
+        'wwmt-advertisment-space-04',
+        'wwmt-advertisment-space-05'
+    ];
+
+    if (!in_array($space_id, $valid_spaces)) {
+        wp_send_json_error('Invalid advertisement space');
+    }
+
+    // Get attachment URL
+    $image_url = wp_get_attachment_url($attachment_id);
+
+    if (!$image_url) {
+        wp_send_json_error('Failed to get image URL');
+    }
+
+    // Save to option
+    update_option("wwmt_ad_image_{$space_id}", $image_url);
+
+    wp_send_json_success([
+        'image_url' => $image_url,
+        'message' => 'Image updated successfully'
+    ]);
+}
+
+/**
+ * Handle AJAX image deletion
+ */
+function wwmt_handle_ad_image_delete()
+{
+    check_ajax_referer('wwmt_ad_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized access');
+    }
+
+    $space_id = sanitize_text_field($_POST['space_id']);
+
+    // Validate space_id
+    $valid_spaces = [
+        'wwmt-advertisment-space-01',
+        'wwmt-advertisment-space-02',
+        'wwmt-advertisment-space-03',
+        'wwmt-advertisment-space-04',
+        'wwmt-advertisment-space-05'
+    ];
+
+    if (!in_array($space_id, $valid_spaces)) {
+        wp_send_json_error('Invalid advertisement space');
+    }
+
+    delete_option("wwmt_ad_image_{$space_id}");
+
+    wp_send_json_success(['message' => 'Image deleted successfully']);
+}
+
+/**
+ * Frontend function to display ad image
+ * Usage: wwmt_display_ad('wwmt-advertisment-space-01');
+ */
+function wwmt_display_ad($space_id)
+{
+    $image_url = get_option("wwmt_ad_image_{$space_id}");
+
+    if (!$image_url) {
+        return '';
+    }
+
+    return '<img src="' . esc_url($image_url) . '" alt="Advertisement" class="wwmt-ad-image" style="max-width: 100%; height: auto; display: block;" />';
+}
+
+/**
+ * Frontend CSS for advertisement images
+ */
+function wwmt_ads_frontend_styles()
+{
+    $css = '
+    <style>
+        .wwmt-ad-image {
+            max-width: 100% !important;
+            height: auto !important;
+            display: block !important;
+        }
+        
+        .fl-col-content .wwmt-ad-image {
+            width: 100%;
+        }
+    </style>
+    ';
+    echo $css;
+}
+
+/**
+ * Shortcode to display advertisement image
+ * Usage: [wwmt_ad space_id="wwmt-advertisment-space-01"]
+ */
+function wwmt_ad_shortcode($atts)
+{
+    $atts = shortcode_atts(array(
+        'space_id' => ''
+    ), $atts);
+
+    if (empty($atts['space_id'])) {
+        return '';
+    }
+
+    return wwmt_display_ad($atts['space_id']);
+}
+add_action('wp_head', 'wwmt_ads_frontend_styles');

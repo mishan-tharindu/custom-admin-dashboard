@@ -1,0 +1,142 @@
+/**
+ * Advertisement Manager Styling
+ */
+
+.wwmt-ads-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.wwmt-ad-space-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.wwmt-ad-space-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.wwmt-ad-space-card h2 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #0073aa;
+    padding-bottom: 10px;
+}
+
+.wwmt-ad-preview {
+    background: #f5f5f5;
+    border: 2px dashed #ddd;
+    border-radius: 6px;
+    padding: 20px;
+    text-align: center;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+    overflow: hidden;
+}
+
+.wwmt-ad-preview img {
+    max-width: 100%;
+    max-height: 200px;
+    height: auto;
+    display: block;
+    border-radius: 4px;
+}
+
+.wwmt-ad-preview .no-image {
+    color: #999;
+    font-size: 14px;
+    margin: 0;
+}
+
+.wwmt-ad-url {
+    margin-bottom: 15px;
+}
+
+.wwmt-ad-url label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #333;
+    font-size: 13px;
+}
+
+.wwmt-ad-url input[type="text"] {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: monospace;
+    color: #666;
+    background-color: #fafafa;
+    word-break: break-all;
+}
+
+.wwmt-ad-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.wwmt-ad-actions .button {
+    flex: 1;
+    min-width: 150px;
+    padding: 8px 12px;
+    font-size: 13px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.wwmt-ad-actions .button-primary {
+    background-color: #0073aa;
+    color: #fff;
+    border-color: #0073aa;
+}
+
+.wwmt-ad-actions .button-primary:hover:not(:disabled) {
+    background-color: #005a87;
+    border-color: #005a87;
+}
+
+.wwmt-ad-actions .button-danger {
+    background-color: #dc3545;
+    color: #fff;
+    border-color: #dc3545;
+}
+
+.wwmt-ad-actions .button-danger:hover:not(:disabled) {
+    background-color: #c82333;
+    border-color: #c82333;
+}
+
+.wwmt-ad-actions .button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .wwmt-ads-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .wwmt-ad-actions {
+        flex-direction: column;
+    }
+    
+    .wwmt-ad-actions .button {
+        min-width: auto;
+    }
+}
