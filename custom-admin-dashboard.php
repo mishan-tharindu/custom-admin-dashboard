@@ -1478,7 +1478,7 @@ function enqueue_post_time_script()
         // --- CHANGED TO RELATIVE TIME ---
         // Calculate "Time Ago" (e.g., "2 hours ago", "1 month ago")
         // human_time_diff returns "1 hour", "5 mins". We append " ago".
-        $post_time = human_time_diff($post_timestamp, current_time('timestamp')) . ' ago';
+        $post_time = human_time_diff($post_timestamp, current_time('timestamp'));
 
         $post_times[$post_id] = $post_time;
     }
@@ -2599,4 +2599,132 @@ function mt_bb_replace_title_with_short_title( $title, $post_id ) {
     
     // OPTION C: PREPEND short title before original title
     // return '<span class="fl-post-short-title">' . esc_html( $short_title ) . '</span> ' . $title;
+}
+
+// ============================================================================
+// 40.  CONVERT POST DATE TO DHIVEHI IN FRONTEND
+// ============================================================================
+// Add this code to your theme's functions.php or create a custom plugin
+
+// Dhivehi numeral mapping
+function convert_to_dhivehi_numerals($text) {
+    $english = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+    $dhivehi = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+    // Dhivehi-Thaana numerals (using Unicode)
+    $dhivehi = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+    
+    return str_replace($english, $dhivehi, $text);
+}
+
+// Dhivehi month names
+function get_dhivehi_month($month_name) {
+    $months = array(
+        'January'   => 'ޖެނުވަރީ',
+        'February'  => 'ފެބްރުވަރީ',
+        'March'     => 'މާރުޗް',
+        'April'     => 'އޭޕްރިލް',
+        'May'       => 'މެއި',
+        'June'      => 'ޖޫން',
+        'July'      => 'ޖުލައި',
+        'August'    => 'އޮގަސްޓް',
+        'September' => 'ސެޕްޓެンބަރ',
+        'October'   => 'އޮކްޓޯބަރ',
+        'November'  => 'ނޮވެンބަރ',
+        'December'  => 'ޑިސެンބަރ'
+    );
+    
+    return isset($months[$month_name]) ? $months[$month_name] : $month_name;
+}
+
+// Filter to convert post date to Dhivehi
+add_filter('the_time', 'convert_post_date_to_dhivehi', 10, 2);
+add_filter('get_the_date', 'convert_post_date_to_dhivehi', 10, 2);
+
+function convert_post_date_to_dhivehi($the_time, $format = '') {
+    // Work with the already formatted time passed to the filter
+    $date_string = $the_time;
+    
+    // Replace month names with Dhivehi equivalents
+    $months = array(
+        'January'   => 'ޖެނުވަރީ',
+        'February'  => 'ފެބްރުވަރީ',
+        'March'     => 'މާރުޗް',
+        'April'     => 'އޭޕްރިލް',
+        'May'       => 'މެއި',
+        'June'      => 'ޖޫން',
+        'July'      => 'ޖުލައި',
+        'August'    => 'އޮގަސްޓް',
+        'September' => 'ސެޕްޓެンބަރ',
+        'October'   => 'އޮކްޓޯބަރ',
+        'November'  => 'ނޮވެンބަރ',
+        'December'  => 'ޑިސެنބަރ'
+    );
+    
+    foreach ($months as $english => $dhivehi) {
+        $date_string = str_replace($english, $dhivehi, $date_string);
+    }
+    
+    // Convert numerals to Dhivehi
+    $english_nums = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+    $dhivehi_nums = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+    $date_string = str_replace($english_nums, $dhivehi_nums, $date_string);
+    
+    return $date_string;
+}
+
+// ============================================================================
+// 41.  ENFORCE COMMENT LENGTH LIMITS
+// ============================================================================
+
+add_action( 'wp_footer', 'mt_bb_comment_word_limit' );
+function mt_bb_comment_word_limit() {
+    if ( ! is_singular() || ! comments_open() ) return;
+    ?>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        const textarea = document.getElementById('fl-comment');
+        const submitBtn = document.getElementById('fl-comment-form-submit');
+        if (!textarea || !submitBtn) return;
+
+        const MAX_WORDS = 150;
+
+        // Create counter
+        const counter = document.createElement('div');
+        counter.id = 'bb-comment-word-count';
+        counter.style.marginTop = '6px';
+        counter.style.fontSize = '13px';
+        counter.style.color = '#666';
+        counter.textContent = `0 / ${MAX_WORDS} words`;
+
+        textarea.insertAdjacentElement('afterend', counter);
+
+        function updateWordCount() {
+            let words = textarea.value.trim().split(/\s+/).filter(Boolean);
+
+            if (words.length > MAX_WORDS) {
+                words = words.slice(0, MAX_WORDS);
+                textarea.value = words.join(' ');
+            }
+
+            const count = words.length;
+            counter.textContent = `${count} / ${MAX_WORDS} words`;
+
+            // Visual feedback
+            if (count >= MAX_WORDS) {
+                counter.style.color = '#d63638'; // WP red
+            } else {
+                counter.style.color = '#666';
+            }
+
+            // Enable / Disable submit
+            submitBtn.disabled = (count === 0 || count > MAX_WORDS);
+        }
+
+        textarea.addEventListener('input', updateWordCount);
+        updateWordCount(); // Init
+
+    });
+    </script>
+    <?php
 }
