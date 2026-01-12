@@ -1,0 +1,114 @@
+/* Emoji Reactions Container */
+.emoji-reactions-container {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 10px 0;
+    flex-wrap: wrap;
+}
+
+/* Emoji Button Styles */
+.emoji-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.emoji-btn:hover {
+    background-color: #e8e8e8;
+    border-color: #999;
+    transform: scale(1.05);
+}
+
+.emoji-btn:active {
+    transform: scale(0.95);
+}
+
+/* Emoji Icon */
+.emoji-icon {
+    font-size: 18px;
+    display: inline-block;
+}
+
+/* Reaction Count */
+.emoji-count {
+    font-size: 12px;
+    color: #666;
+    font-weight: 500;
+    min-width: 20px;
+    text-align: center;
+}
+
+/* Loading State */
+.emoji-btn.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Active State (User Reacted) */
+.emoji-btn.active {
+    background-color: #fff9e6;
+    border-color: #ffc107;
+    font-weight: 600;
+}
+
+.emoji-btn.active .emoji-count {
+    color: #ffc107;
+}
+
+/* Clicked Animation */
+.emoji-btn.clicked {
+    animation: emojiPulse 0.3s ease-out;
+}
+
+.emoji-btn.unclicked {
+    animation: emojiRemove 0.3s ease-out;
+}
+
+@keyframes emojiPulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes emojiRemove {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(0.9);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .emoji-reactions-container {
+        gap: 6px;
+    }
+    
+    .emoji-btn {
+        padding: 5px 8px;
+        font-size: 13px;
+    }
+    
+    .emoji-icon {
+        font-size: 16px;
+    }
+}

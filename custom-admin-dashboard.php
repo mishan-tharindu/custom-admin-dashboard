@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Custom Admin Dashboard
  * Description: A custom plugin to modify and clean up the WordPress admin dashboard. [wwmt_time_ago] or [wwmt_time_ago icon="clock"], [post_image_count], [date_weather]
- * Version: 1.8.5
+ * Version: 1.8.52
  * Author: TechM
  * Author URI: https://yourwebsite.com
  * Text Domain: custom-admin-dashboard
@@ -2727,4 +2727,158 @@ function mt_bb_comment_word_limit() {
     });
     </script>
     <?php
+}
+
+// ============================================================================
+// 42.  EMOJI REACTIONS FOR COMMENTS
+// ============================================================================
+
+// Hook to enqueue scripts and styles
+add_action('wp_enqueue_scripts', 'emoji_reactions_enqueue_assets');
+function emoji_reactions_enqueue_assets() {
+    wp_enqueue_script('emoji-reactions', plugin_dir_url(__FILE__) . 'emoji-reactions.js', ['jquery'], '1.0', true);
+    wp_enqueue_style('emoji-reactions', plugin_dir_url(__FILE__) . 'emoji-reactions.css', [], '1.0');
+    
+    // Localize script to pass AJAX URL
+    wp_localize_script('emoji-reactions', 'emojiReactionsObj', [
+        'ajaxUrl' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('emoji_reactions_nonce')
+    ]);
+}
+
+// Display emoji reactions below each comment
+add_filter('comment_text', 'emoji_reactions_display', 10, 3);
+function emoji_reactions_display($comment_text, $comment, $args) {
+    $comment_id = $comment->comment_ID;
+    
+    // Define emoji reactions
+    $emojis = [
+        'like' => '👍',
+        'happy' => '😊',
+        'angry' => '😠',
+        'wow' => '😮',
+        'heart' => '❤️'
+    ];
+    
+    // Get user identifier (IP or user ID)
+    $user_id = get_user_id_for_reaction();
+    
+    $html = '<div class="emoji-reactions-container" data-comment-id="' . esc_attr($comment_id) . '">';
+    
+    foreach ($emojis as $key => $emoji) {
+        $count = get_emoji_reaction_count($comment_id, $key);
+        $user_reacted = has_user_reacted($comment_id, $key, $user_id);
+        $active_class = $user_reacted ? 'active' : '';
+        
+        $html .= '<button class="emoji-btn ' . $active_class . '" data-emoji="' . esc_attr($key) . '" title="' . esc_attr(ucfirst($key)) . '">';
+        $html .= '<span class="emoji-icon">' . $emoji . '</span>';
+        $html .= '<span class="emoji-count">' . $count . '</span>';
+        $html .= '</button>';
+    }
+    
+    $html .= '</div>';
+    
+    return $comment_text . $html;
+}
+
+// Get user identifier (IP address for non-logged-in users, user ID for logged-in)
+function get_user_id_for_reaction() {
+    if (is_user_logged_in()) {
+        return 'user_' . get_current_user_id();
+    } else {
+        return 'ip_' . md5($_SERVER['REMOTE_ADDR']);
+    }
+}
+
+// Check if user has already reacted with this emoji
+function has_user_reacted($comment_id, $emoji_type, $user_id) {
+    $reactions = get_comment_meta($comment_id, 'emoji_reactions_users', true);
+    
+    if (!is_array($reactions)) {
+        return false;
+    }
+    
+    if (!isset($reactions[$emoji_type])) {
+        return false;
+    }
+    
+    return in_array($user_id, $reactions[$emoji_type]);
+}
+
+// Get reaction count for a comment
+function get_emoji_reaction_count($comment_id, $emoji_type) {
+    $reactions = get_comment_meta($comment_id, 'emoji_reactions_users', true);
+    
+    if (!is_array($reactions)) {
+        return 0;
+    }
+    
+    return isset($reactions[$emoji_type]) ? count($reactions[$emoji_type]) : 0;
+}
+
+// AJAX handler for adding/removing reactions
+add_action('wp_ajax_emoji_reaction', 'handle_emoji_reaction');
+add_action('wp_ajax_nopriv_emoji_reaction', 'handle_emoji_reaction');
+function handle_emoji_reaction() {
+    check_ajax_referer('emoji_reactions_nonce', 'nonce');
+    
+    $comment_id = intval($_POST['comment_id']);
+    $emoji_type = sanitize_text_field($_POST['emoji_type']);
+    $user_id = get_user_id_for_reaction();
+    
+    // Validate emoji type
+    $allowed_emojis = ['like', 'happy', 'angry', 'wow', 'heart'];
+    if (!in_array($emoji_type, $allowed_emojis)) {
+        wp_send_json_error('Invalid emoji type');
+    }
+    
+    // Verify comment exists
+    $comment = get_comment($comment_id);
+    if (!$comment) {
+        wp_send_json_error('Comment not found');
+    }
+    
+    // Get current reactions
+    $reactions = get_comment_meta($comment_id, 'emoji_reactions_users', true);
+    if (!is_array($reactions)) {
+        $reactions = [];
+    }
+    
+    // Initialize emoji array if not exists
+    if (!isset($reactions[$emoji_type])) {
+        $reactions[$emoji_type] = [];
+    }
+    
+    // Toggle: if user already reacted, remove it; otherwise add it
+    $user_key = array_search($user_id, $reactions[$emoji_type]);
+    
+    if ($user_key !== false) {
+        // User already reacted, remove the reaction
+        unset($reactions[$emoji_type][$user_key]);
+        $reacted = false;
+    } else {
+        // User hasn't reacted, add the reaction
+        $reactions[$emoji_type][] = $user_id;
+        $reacted = true;
+    }
+    
+    // Re-index array
+    $reactions[$emoji_type] = array_values($reactions[$emoji_type]);
+    
+    // Save reactions
+    update_comment_meta($comment_id, 'emoji_reactions_users', $reactions);
+    
+    // Build reaction counts response
+    $reaction_counts = [];
+    foreach ($allowed_emojis as $emoji) {
+        $reaction_counts[$emoji] = isset($reactions[$emoji]) ? count($reactions[$emoji]) : 0;
+    }
+    
+    // Return updated data
+    wp_send_json_success([
+        'reactions' => $reaction_counts,
+        'comment_id' => $comment_id,
+        'emoji_type' => $emoji_type,
+        'reacted' => $reacted
+    ]);
 }
