@@ -1536,7 +1536,8 @@ function date_with_live_weather_shortcode()
     $dhivehi_day = $dhivehi_days[$day_name] ?? $day_name;
     $dhivehi_month = $dhivehi_months[$month_name] ?? $month_name;
 
-    $date = $dhivehi_day . " " . $day_num . " " . $dhivehi_month . " " . $year;
+    // $date = $dhivehi_day . " " . $day_num . " " . $dhivehi_month . " " . $year;
+    $date =  $day_num . " " . $dhivehi_month . " " . $year;
 
     // 4️⃣ Final output
     return $temp  . " — " . $date;
@@ -3435,3 +3436,40 @@ function comment_form_custom_css() {
         }
     </style>';
 }
+
+// ============================================================================
+// 45.  INCREASE UPLOAD LIMIT FOR LARGE AUDIO FILES
+// ============================================================================
+
+// 1. Increase PHP limits (works on most shared hosts)
+add_action('init', function () {
+    @ini_set('upload_max_filesize', '200M');
+    @ini_set('post_max_size', '210M');
+    @ini_set('max_execution_time', '300');
+    @ini_set('max_input_time', '300');
+    @ini_set('memory_limit', '256M');
+});
+
+// 2. Increase WordPress upload size limit
+add_filter('upload_size_limit', function ($size) {
+    return 200 * 1024 * 1024; // 200 MB
+});
+
+// 3. Allow large audio files explicitly
+add_filter('wp_handle_upload_prefilter', function ($file) {
+    if ($file['size'] > 200 * 1024 * 1024) {
+        $file['error'] = 'File exceeds allowed upload size.';
+    }
+    return $file;
+});
+
+// 4. Ensure MP3 & large audio formats are allowed
+add_filter('upload_mimes', function ($mimes) {
+    $mimes['mp3']  = 'audio/mpeg';
+    $mimes['wav']  = 'audio/wav';
+    $mimes['ogg']  = 'audio/ogg';
+    $mimes['m4a']  = 'audio/mp4';
+    return $mimes;
+});
+
+
