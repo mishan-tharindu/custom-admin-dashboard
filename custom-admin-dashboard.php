@@ -3025,7 +3025,7 @@ function handle_emoji_reaction() {
 
 /**
  * Advertisement Space Manager Plugin
- * Handles all image types including GIFs for advertisement spaces
+ * Handles all image types including GIFs for advertisement spaces with redirect URLs
  */
 
 // Hook to register admin menu and assets
@@ -3033,6 +3033,7 @@ add_action('admin_menu', 'wwmt_ads_register_admin_page');
 add_action('admin_enqueue_scripts', 'wwmt_ads_enqueue_scripts');
 add_action('wp_ajax_wwmt_upload_ad_image', 'wwmt_handle_ad_image_upload');
 add_action('wp_ajax_wwmt_delete_ad_image', 'wwmt_handle_ad_image_delete');
+add_action('wp_ajax_wwmt_save_ad_url', 'wwmt_handle_ad_url_save');
 add_action('wp_head', 'wwmt_ads_frontend_styles');
 add_shortcode('wwmt_ad', 'wwmt_ad_shortcode');
 
@@ -3071,7 +3072,7 @@ function wwmt_ads_enqueue_scripts($hook)
         'wwmt-ad-manager',
         plugin_dir_url(__FILE__) . 'js/ad-manager.js',
         array('jquery'),
-        '1.0.0',
+        '1.0.1',
         true
     );
 
@@ -3086,7 +3087,7 @@ function wwmt_ads_enqueue_scripts($hook)
         'wwmt-ad-manager',
         plugin_dir_url(__FILE__) . 'css/ad-manager.css',
         array(),
-        '1.0.0'
+        '1.0.1'
     );
 }
 
@@ -3106,7 +3107,6 @@ function wwmt_ads_render_admin_page()
         'wwmt-advertisment-space-04' => 'Advertisement Space 04',
         'wwmt-advertisment-space-05' => 'Advertisement Space 05',
     ];
-
 
 ?>
     <div class="wrap">
@@ -3136,9 +3136,29 @@ function wwmt_ads_render_admin_page()
                         ?>
                     </div>
 
-                    <div class="wwmt-ad-url" id="url-<?php echo esc_attr($space_id); ?>">
+                    <div class="wwmt-ad-url" id="image-url-<?php echo esc_attr($space_id); ?>">
                         <label>Image URL:</label>
                         <input type="text" readonly value="<?php echo esc_url(get_option("wwmt_ad_image_{$space_id}")); ?>" />
+                    </div>
+
+                    <div class="wwmt-ad-redirect-url">
+                        <label for="redirect-url-<?php echo esc_attr($space_id); ?>">Redirect URL:</label>
+                        <div class="wwmt-url-input-group">
+                            <input 
+                                type="url" 
+                                id="redirect-url-<?php echo esc_attr($space_id); ?>" 
+                                class="wwmt-redirect-url-input"
+                                data-space-id="<?php echo esc_attr($space_id); ?>"
+                                placeholder="https://example.com"
+                                value="<?php echo esc_url(get_option("wwmt_ad_redirect_url_{$space_id}")); ?>" 
+                            />
+                            <button type="button"
+                                class="button button-secondary wwmt-save-url-btn"
+                                data-space-id="<?php echo esc_attr($space_id); ?>">
+                                Save URL
+                            </button>
+                        </div>
+                        <p class="description">Enter the URL where users will be redirected when clicking the advertisement.</p>
                     </div>
 
                     <div class="wwmt-ad-actions">
@@ -3242,18 +3262,68 @@ function wwmt_handle_ad_image_delete()
 }
 
 /**
+ * Handle AJAX redirect URL save
+ */
+function wwmt_handle_ad_url_save()
+{
+    check_ajax_referer('wwmt_ad_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized access');
+    }
+
+    $space_id = sanitize_text_field($_POST['space_id']);
+    $redirect_url = esc_url_raw($_POST['redirect_url']);
+
+    // Validate space_id
+    $valid_spaces = [
+        'wwmt-advertisment-space-01',
+        'wwmt-advertisment-space-02',
+        'wwmt-advertisment-space-03',
+        'wwmt-advertisment-space-04',
+        'wwmt-advertisment-space-05'
+    ];
+
+    if (!in_array($space_id, $valid_spaces)) {
+        wp_send_json_error('Invalid advertisement space');
+    }
+
+    // Validate URL if not empty
+    if (!empty($redirect_url) && !filter_var($redirect_url, FILTER_VALIDATE_URL)) {
+        wp_send_json_error('Invalid URL format');
+    }
+
+    // Save to option (delete if empty)
+    if (empty($redirect_url)) {
+        delete_option("wwmt_ad_redirect_url_{$space_id}");
+        wp_send_json_success(['message' => 'Redirect URL removed successfully']);
+    } else {
+        update_option("wwmt_ad_redirect_url_{$space_id}", $redirect_url);
+        wp_send_json_success(['message' => 'Redirect URL saved successfully']);
+    }
+}
+
+/**
  * Frontend function to display ad image
  * Usage: wwmt_display_ad('wwmt-advertisment-space-01');
  */
 function wwmt_display_ad($space_id)
 {
     $image_url = get_option("wwmt_ad_image_{$space_id}");
+    $redirect_url = get_option("wwmt_ad_redirect_url_{$space_id}");
 
     if (!$image_url) {
         return '';
     }
 
-    return '<img src="' . esc_url($image_url) . '" alt="Advertisement" class="wwmt-ad-image" style="max-width: 100%; height: auto; display: block;" />';
+    $image_html = '<img src="' . esc_url($image_url) . '" alt="Advertisement" class="wwmt-ad-image" style="max-width: 100%; height: auto; display: block;" />';
+
+    // If redirect URL exists, wrap image in anchor tag
+    if (!empty($redirect_url)) {
+        return '<a href="' . esc_url($redirect_url) . '" target="_blank" rel="noopener noreferrer" class="wwmt-ad-link">' . $image_html . '</a>';
+    }
+
+    return $image_html;
 }
 
 /**
@@ -3267,6 +3337,16 @@ function wwmt_ads_frontend_styles()
             max-width: 100% !important;
             height: auto !important;
             display: block !important;
+        }
+        
+        .wwmt-ad-link {
+            display: block;
+            text-decoration: none;
+        }
+        
+        .wwmt-ad-link:hover .wwmt-ad-image {
+            opacity: 0.9;
+            transition: opacity 0.3s ease;
         }
         
         .fl-col-content .wwmt-ad-image {
@@ -3293,7 +3373,6 @@ function wwmt_ad_shortcode($atts)
 
     return wwmt_display_ad($atts['space_id']);
 }
-add_action('wp_head', 'wwmt_ads_frontend_styles');
 
 
 // ============================================================================
