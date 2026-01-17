@@ -1,0 +1,41 @@
+.custom-time-ago-wrap {
+    margin-left: 8px;
+    color: #666;
+}
+
+.custom-time-ago {
+    font-style: italic;
+    color: #999;
+    font-size: 13px;
+}
+
+.custom-time-ago i {
+    margin-right: 4px;
+    color: #999;
+}
+
+.fl-post-grid-meta .custom-time-ago {
+    margin-left: 5px;
+}
+
+/* Shortcode Styling */
+.wwmt-time-ago-shortcode {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #666;
+    font-size: 14px;
+}
+
+.wwmt-time-ago-shortcode i {
+    color: #999;
+}
+
+.wwmt-time-ago-shortcode .time-label {
+    font-weight: 500;
+}
+
+.wwmt-time-ago-shortcode strong {
+    color: #333;
+    font-weight: 600;
+}

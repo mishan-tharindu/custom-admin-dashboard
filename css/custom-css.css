@@ -1,0 +1,13 @@
+        .status-approved,
+        .status-review,
+        .status-other {
+            font-weight: bold !important;
+            cursor: pointer !important;
+            transition: opacity 0.3s ease !important;
+        }
+
+        .status-approved:hover,
+        .status-review:hover,
+        .status-other:hover {
+            opacity: 0.8 !important;
+        }

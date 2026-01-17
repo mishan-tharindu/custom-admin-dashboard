@@ -622,53 +622,15 @@ add_action('wp_ajax_nopriv_get_post_time_ago', 'get_post_time_ago_ajax');
 /**
  * Add custom styling for the time elapsed display.
  */
-function custom_time_elapsed_styles()
-{
-    echo '<style>
-        .custom-time-ago-wrap {
-            margin-left: 8px;
-            color: #666;
-        }
-        
-        .custom-time-ago {
-            font-style: italic;
-            color: #999;
-            font-size: 13px;
-        }
-        
-        .custom-time-ago i {
-            margin-right: 4px;
-            color: #999;
-        }
-        
-        .fl-post-grid-meta .custom-time-ago {
-            margin-left: 5px;
-        }
-        
-        /* Shortcode Styling */
-        .wwmt-time-ago-shortcode {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            color: #666;
-            font-size: 14px;
-        }
-        
-        .wwmt-time-ago-shortcode i {
-            color: #999;
-        }
-        
-        .wwmt-time-ago-shortcode .time-label {
-            font-weight: 500;
-        }
-        
-        .wwmt-time-ago-shortcode strong {
-            color: #333;
-            font-weight: 600;
-        }
-    </style>';
+function custom_time_elapsed_enqueue_styles() {
+    wp_enqueue_style(
+        'custom-time-ago-styles', // Unique handle
+        plugin_dir_url(__FILE__) . 'css/custom-time.css', // Path to file
+        array(), // Dependencies
+        '1.0.0'  // Version number
+    );
 }
-add_action('wp_head', 'custom_time_elapsed_styles');
+add_action('wp_enqueue_scripts', 'custom_time_elapsed_enqueue_styles');
 
 
 // ============================================================================
@@ -730,21 +692,15 @@ function display_post_status_column($column, $post_id)
 }
 
 // Step 4: Add custom CSS for better styling
-add_action('admin_head', 'add_post_status_column_styles');
-function add_post_status_column_styles()
-{
-    echo '<style>
-        .status-approved, .status-review, .status-other {
-            font-weight: bold !important;
-            cursor: pointer !important;
-            transition: opacity 0.3s ease !important;
-        }
-        .status-approved:hover, .status-review:hover, .status-other:hover {
-            opacity: 0.8 !important;
-        }
-
-    </style>';
+function custom_css_enqueue_styles() {
+    wp_enqueue_style(
+        'custom-css-styles', // Unique handle
+        plugin_dir_url(__FILE__) . 'css/custom-css.css', // Path to file
+        array(), // Dependencies
+        '1.0.0'  // Version number
+    );
 }
+add_action('wp_enqueue_scripts', 'custom_css_enqueue_styles');
 
 // ============================================================================
 // 17. CREATE CUSTOM LOGIN & REGISTRATION PAGES
