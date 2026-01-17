@@ -2,7 +2,7 @@
 
 /**
  * Plugin Name: Custom Admin Dashboard
- * Description: A custom plugin to modify and clean up the WordPress admin dashboard. [wwmt_time_ago] or [wwmt_time_ago icon="clock"], [post_image_count], [date_weather]
+ * Description: A custom plugin to modify and clean up the WordPress admin dashboard. [wwmt_time_ago] or [wwmt_time_ago icon="clock"], [post_image_count], [date_weather], [wwmt_ad space_id="wwmt-advertisment-space-01"], [wwmt_ad space_id="wwmt-advertisment-space-02"], [wwmt_ad space_id="wwmt-advertisment-space-03"], [wwmt_ad space_id="wwmt-advertisment-space-04"], [wwmt_ad space_id="wwmt-advertisment-space-05"]
  * Version: 1.8.9
  * Author: TechM
  * Author URI: https://yourwebsite.com
@@ -3111,7 +3111,7 @@ function wwmt_ads_render_admin_page()
 ?>
     <div class="wrap">
         <h1>Advertisement Spaces Manager</h1>
-        <p class="wwmt-add-label-description">Manage your advertisement spaces use this shortcode [wwmt_ad space_id="wwmt-advertisment-space-01"] example.
+        <!-- <p class="wwmt-add-label-description">Manage your advertisement spaces use this shortcode [wwmt_ad space_id="wwmt-advertisment-space-01"] example.
             We already provide a shortcode for each advertisement space. We pre build 5 spaces. You can use them directly in posts, pages, or widgets.</p>
         <p>Shortcode examples:<br>
             [wwmt_ad space_id="wwmt-advertisment-space-01"],
@@ -3119,7 +3119,7 @@ function wwmt_ads_render_admin_page()
             [wwmt_ad space_id="wwmt-advertisment-space-03"],
             [wwmt_ad space_id="wwmt-advertisment-space-04"],
             [wwmt_ad space_id="wwmt-advertisment-space-05"]
-        </p>
+        </p> -->
         <div class="wwmt-ads-container">
             <?php foreach ($ad_spaces as $space_id => $label): ?>
                 <div class="wwmt-ad-space-card">
