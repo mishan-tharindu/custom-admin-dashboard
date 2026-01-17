@@ -2832,23 +2832,51 @@ function mt_bb_comment_word_limit()
 
 // Hook to enqueue scripts and styles
 add_action('wp_enqueue_scripts', 'emoji_reactions_enqueue_assets');
-function emoji_reactions_enqueue_assets()
-{
-    wp_enqueue_script('emoji-reactions', plugin_dir_url(__FILE__) . 'emoji-reactions.js', ['jquery'], '1.0', true);
-    wp_enqueue_style('emoji-reactions', plugin_dir_url(__FILE__) . 'emoji-reactions.css', [], '1.0');
+function emoji_reactions_enqueue_assets() {
+    wp_enqueue_script('emoji-reactions', plugin_dir_url(__FILE__) . 'emoji-reactions.js', ['jquery'], '1.1', true);
+    wp_enqueue_style('emoji-reactions', plugin_dir_url(__FILE__) . 'emoji-reactions.css', [], '1.1');
 
-    // Localize script to pass AJAX URL
     wp_localize_script('emoji-reactions', 'emojiReactionsObj', [
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('emoji_reactions_nonce')
     ]);
 }
 
+// Helper function for Short Relative Time (e.g., "1 hour", "2 yr")
+function get_short_relative_time($comment_date) {
+    $timestamp = strtotime($comment_date);
+    $diff = current_time('timestamp') - $timestamp;
+
+    if ($diff < 60) {
+        return 'Just now';
+    } elseif ($diff < 3600) {
+        $mins = floor($diff / 60);
+        return $mins . ' min' . ($mins > 1 ? '' : '');
+    } elseif ($diff < 86400) {
+        $hours = floor($diff / 3600);
+        return $hours . ' hr' . ($hours > 1 ? '' : '');
+    } elseif ($diff < 604800) {
+        $days = floor($diff / 86400);
+        return $days . ' day' . ($days > 1 ? '' : '');
+    } elseif ($diff < 2629743) { // Approx 1 month
+        $weeks = floor($diff / 604800);
+        return $weeks . ' Week' . ($weeks > 1 ? '' : ''); // Capitalized 'Week' as per request
+    } elseif ($diff < 31536000) {
+        $months = floor($diff / 2629743);
+        return $months . ' month' . ($months > 1 ? '' : '');
+    } else {
+        $years = floor($diff / 31536000);
+        return $years . ' yr'; // "yr" as per request
+    }
+}
+
 // Display emoji reactions below each comment
 add_filter('comment_text', 'emoji_reactions_display', 10, 3);
-function emoji_reactions_display($comment_text, $comment, $args)
-{
+function emoji_reactions_display($comment_text, $comment, $args) {
     $comment_id = $comment->comment_ID;
+
+    // 1. Get Relative Date
+    $time_string = get_short_relative_time($comment->comment_date);
 
     // Define emoji reactions
     $emojis = [
@@ -2859,10 +2887,16 @@ function emoji_reactions_display($comment_text, $comment, $args)
         'heart' => '❤️'
     ];
 
-    // Get user identifier (IP or user ID)
     $user_id = get_user_id_for_reaction();
 
-    $html = '<div class="emoji-reactions-container" data-comment-id="' . esc_attr($comment_id) . '">';
+    // Start Container
+    $html = '<div class="wwmt-comment-details-section" style="display:flex; align-items:center; gap:10px; margin-top:10px;">';
+
+    // 2. Add Time Element
+    $html .= '<div class="wwmt-comment-time-elscaped" style="font-size:12px; color:#888;">' . esc_html($time_string) . '</div>';
+
+    // 3. Add Reactions
+    $html .= '<div class="emoji-reactions-container" data-comment-id="' . esc_attr($comment_id) . '">';
 
     foreach ($emojis as $key => $emoji) {
         $count = get_emoji_reaction_count($comment_id, $key);
@@ -2875,14 +2909,14 @@ function emoji_reactions_display($comment_text, $comment, $args)
         $html .= '</button>';
     }
 
-    $html .= '</div>';
+    $html .= '</div>'; // End reactions container
+    $html .= '</div>'; // End main wrapper
 
     return $comment_text . $html;
 }
 
-// Get user identifier (IP address for non-logged-in users, user ID for logged-in)
-function get_user_id_for_reaction()
-{
+// Get user identifier
+function get_user_id_for_reaction() {
     if (is_user_logged_in()) {
         return 'user_' . get_current_user_id();
     } else {
@@ -2890,98 +2924,97 @@ function get_user_id_for_reaction()
     }
 }
 
-// Check if user has already reacted with this emoji
-function has_user_reacted($comment_id, $emoji_type, $user_id)
-{
+// Check if user has reacted
+function has_user_reacted($comment_id, $emoji_type, $user_id) {
     $reactions = get_comment_meta($comment_id, 'emoji_reactions_users', true);
-
-    if (!is_array($reactions)) {
+    if (!is_array($reactions) || !isset($reactions[$emoji_type])) {
         return false;
     }
-
-    if (!isset($reactions[$emoji_type])) {
-        return false;
-    }
-
     return in_array($user_id, $reactions[$emoji_type]);
 }
 
-// Get reaction count for a comment
-function get_emoji_reaction_count($comment_id, $emoji_type)
-{
+// Get count
+function get_emoji_reaction_count($comment_id, $emoji_type) {
     $reactions = get_comment_meta($comment_id, 'emoji_reactions_users', true);
-
-    if (!is_array($reactions)) {
+    if (!is_array($reactions) || !isset($reactions[$emoji_type])) {
         return 0;
     }
-
-    return isset($reactions[$emoji_type]) ? count($reactions[$emoji_type]) : 0;
+    return count($reactions[$emoji_type]);
 }
 
-// AJAX handler for adding/removing reactions
+// AJAX handler - Modified for Mutual Exclusivity (Only 1 emoji allowed)
 add_action('wp_ajax_emoji_reaction', 'handle_emoji_reaction');
 add_action('wp_ajax_nopriv_emoji_reaction', 'handle_emoji_reaction');
-function handle_emoji_reaction()
-{
+function handle_emoji_reaction() {
     check_ajax_referer('emoji_reactions_nonce', 'nonce');
 
     $comment_id = intval($_POST['comment_id']);
-    $emoji_type = sanitize_text_field($_POST['emoji_type']);
+    $target_emoji = sanitize_text_field($_POST['emoji_type']); // The emoji just clicked
     $user_id = get_user_id_for_reaction();
 
-    // Validate emoji type
     $allowed_emojis = ['like', 'happy', 'angry', 'wow', 'heart'];
-    if (!in_array($emoji_type, $allowed_emojis)) {
+    if (!in_array($target_emoji, $allowed_emojis)) {
         wp_send_json_error('Invalid emoji type');
     }
 
-    // Verify comment exists
     $comment = get_comment($comment_id);
     if (!$comment) {
         wp_send_json_error('Comment not found');
     }
 
-    // Get current reactions
+    // Get current reactions data
     $reactions = get_comment_meta($comment_id, 'emoji_reactions_users', true);
     if (!is_array($reactions)) {
         $reactions = [];
     }
 
-    // Initialize emoji array if not exists
-    if (!isset($reactions[$emoji_type])) {
-        $reactions[$emoji_type] = [];
+    $reacted = false; // Status of the target emoji after logic
+
+    // Loop through ALL allowed emojis to enforce "Only One" rule
+    foreach ($allowed_emojis as $emoji_key) {
+        if (!isset($reactions[$emoji_key])) {
+            $reactions[$emoji_key] = [];
+        }
+
+        // Check if user exists in this emoji bucket
+        $user_key = array_search($user_id, $reactions[$emoji_key]);
+
+        if ($emoji_key === $target_emoji) {
+            // -- LOGIC FOR THE CLICKED EMOJI --
+            if ($user_key !== false) {
+                // User already has this specific emoji -> Toggle OFF
+                unset($reactions[$emoji_key][$user_key]);
+                $reacted = false;
+            } else {
+                // User doesn't have this one -> Toggle ON
+                $reactions[$emoji_key][] = $user_id;
+                $reacted = true;
+            }
+        } else {
+            // -- LOGIC FOR OTHER EMOJIS --
+            // If user has any OTHER emoji selected, remove it (Switching vote)
+            if ($user_key !== false) {
+                unset($reactions[$emoji_key][$user_key]);
+            }
+        }
+
+        // Re-index array to keep it clean
+        $reactions[$emoji_key] = array_values($reactions[$emoji_key]);
     }
 
-    // Toggle: if user already reacted, remove it; otherwise add it
-    $user_key = array_search($user_id, $reactions[$emoji_type]);
-
-    if ($user_key !== false) {
-        // User already reacted, remove the reaction
-        unset($reactions[$emoji_type][$user_key]);
-        $reacted = false;
-    } else {
-        // User hasn't reacted, add the reaction
-        $reactions[$emoji_type][] = $user_id;
-        $reacted = true;
-    }
-
-    // Re-index array
-    $reactions[$emoji_type] = array_values($reactions[$emoji_type]);
-
-    // Save reactions
+    // Save updated reactions
     update_comment_meta($comment_id, 'emoji_reactions_users', $reactions);
 
-    // Build reaction counts response
+    // Calculate new counts
     $reaction_counts = [];
     foreach ($allowed_emojis as $emoji) {
         $reaction_counts[$emoji] = isset($reactions[$emoji]) ? count($reactions[$emoji]) : 0;
     }
 
-    // Return updated data
     wp_send_json_success([
         'reactions' => $reaction_counts,
         'comment_id' => $comment_id,
-        'emoji_type' => $emoji_type,
+        'emoji_type' => $target_emoji,
         'reacted' => $reacted
     ]);
 }

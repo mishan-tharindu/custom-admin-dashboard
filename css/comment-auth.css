@@ -1,3 +1,52 @@
+
+.fl-comments-list .comment-content {
+    border: none !important;
+}
+
+.comment-date {
+    display: none;
+}
+
+.comment-author-link {
+    margin-right: 10px;
+}
+
+
+/* Parent container */
+.wwmt-comment-details-section {
+    display: flex;
+    align-items: center;         /* Vertically centers both children */
+    justify-content: space-between; /* Pushes children to opposite ends */
+    margin-top: 10px;
+}
+
+/* Timestamp (Left) */
+.wwmt-comment-time-elscaped {
+    font-size: 12px;
+    color: #888;
+    order: 2; /* Ensures it stays on the left */
+
+    /* display: flex;
+    align-items: center;
+    gap: 4px; */
+    padding: 6px 10px;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    /* cursor: pointer; */
+    font-size: 14px;
+    transition: all 0.3s ease;
+    /* font-family: inherit; */
+    direction: rtl;
+}
+
+/* Emoji container (Right) */
+.emoji-reactions-container {
+    display: flex;
+    align-items: center;
+    order: 1; /* Ensures it stays on the right */
+}
+
 /* Make fl-comments a flex container */
 .fl-comments {
     display: flex;

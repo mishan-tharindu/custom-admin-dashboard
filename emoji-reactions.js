@@ -8,7 +8,7 @@ jQuery(document).ready(function($) {
         const commentId = container.data('comment-id');
         const emojiType = btn.data('emoji');
         
-        // Prevent multiple clicks
+        // Prevent multiple clicks while loading
         if (btn.hasClass('loading')) {
             return;
         }
@@ -29,21 +29,28 @@ jQuery(document).ready(function($) {
             success: function(response) {
                 if (response.success) {
                     const reactions = response.data.reactions;
-                    const reacted = response.data.reacted;
+                    const reacted = response.data.reacted; // true if added, false if removed
                     
-                    // Update all emoji counts for this comment
+                    // 1. Update counts for ALL buttons
                     container.find('.emoji-btn').each(function() {
-                        const emoji = $(this).data('emoji');
-                        const count = reactions[emoji] || 0;
-                        $(this).find('.emoji-count').text(count);
+                        const currentBtn = $(this);
+                        const emojiKey = currentBtn.data('emoji');
+                        const count = reactions[emojiKey] || 0;
+                        currentBtn.find('.emoji-count').text(count);
                     });
                     
-                    // Toggle active state
+                    // 2. Handle Mutual Exclusivity (Single Choice)
+                    
+                    // First, remove 'active' from ALL buttons in this container
+                    // because we might be switching from 'Happy' to 'Like'
+                    container.find('.emoji-btn').removeClass('active clicked');
+
+                    // If the user effectively "Added" a reaction (didn't just toggle off)
+                    // Add active class to the clicked button
                     if (reacted) {
-                        btn.addClass('active');
-                        btn.addClass('clicked');
+                        btn.addClass('active clicked');
                     } else {
-                        btn.removeClass('active');
+                        // User toggled off, add unclicked animation class if desired
                         btn.addClass('unclicked');
                     }
                     
@@ -51,6 +58,7 @@ jQuery(document).ready(function($) {
                     setTimeout(() => {
                         btn.removeClass('clicked unclicked');
                     }, 300);
+
                 } else {
                     console.error('Error:', response.data);
                 }
