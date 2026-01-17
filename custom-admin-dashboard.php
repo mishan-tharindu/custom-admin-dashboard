@@ -948,16 +948,16 @@ function custom_login_form_shortcode()
 
                     // **MODIFIED: Redirect to return URL or dashboard**
                     $redirect_url = admin_url(); // default
-                    
+
                     // Check POST data first (from hidden field)
                     if (isset($_POST['redirect_to']) && !empty($_POST['redirect_to'])) {
                         $redirect_url = esc_url_raw($_POST['redirect_to']);
-                    } 
+                    }
                     // Fallback to GET parameter
                     elseif (isset($_GET['redirect_to']) && !empty($_GET['redirect_to'])) {
                         $redirect_url = esc_url_raw($_GET['redirect_to']);
                     }
-                    
+
                     wp_redirect($redirect_url);
                     exit;
                 }
@@ -967,7 +967,7 @@ function custom_login_form_shortcode()
 
     // Get signup page - will trigger 404 if missing
     $signup_page = check_auth_page_exists('User Signup');
-    
+
     // Add redirect_to parameter to signup link too
     $current_url = isset($_GET['redirect_to']) ? esc_url($_GET['redirect_to']) : '';
     if ($current_url) {
@@ -1135,16 +1135,16 @@ function custom_signup_form_shortcode()
 
                     // **MODIFIED: Redirect to return URL or dashboard**
                     $redirect_url = admin_url(); // default
-                    
+
                     // Check POST data first (from hidden field)
                     if (isset($_POST['redirect_to']) && !empty($_POST['redirect_to'])) {
                         $redirect_url = esc_url_raw($_POST['redirect_to']);
-                    } 
+                    }
                     // Fallback to GET parameter
                     elseif (isset($_GET['redirect_to']) && !empty($_GET['redirect_to'])) {
                         $redirect_url = esc_url_raw($_GET['redirect_to']);
                     }
-                    
+
                     wp_redirect($redirect_url);
                     exit;
                 }
@@ -1170,7 +1170,7 @@ function custom_signup_form_shortcode()
 
             <form method="POST" class="custom-signup-form" novalidate>
                 <?php wp_nonce_field('custom_signup_action', 'custom_signup_nonce'); ?>
-                
+
                 <!-- Preserve redirect URL -->
                 <?php if (isset($_GET['redirect_to'])) : ?>
                     <input type="hidden" name="redirect_to" value="<?php echo esc_url($_GET['redirect_to']); ?>">
@@ -1302,12 +1302,12 @@ function custom_login_page_redirect()
         $login_page = get_page_by_title('User Login');
         if ($login_page) {
             $login_url = get_page_link($login_page->ID);
-            
+
             // **FIX: Preserve the redirect_to parameter if it exists**
             if (isset($_GET['redirect_to']) && !empty($_GET['redirect_to'])) {
                 $login_url = add_query_arg('redirect_to', urlencode($_GET['redirect_to']), $login_url);
             }
-            
+
             wp_redirect($login_url);
             exit;
         }
@@ -1351,12 +1351,12 @@ function restrict_wp_login()
         $login_page = get_page_by_title('User Login');
         if ($login_page) {
             $login_url = get_page_link($login_page->ID);
-            
+
             // **FIX: Preserve the redirect_to parameter if it exists**
             if (isset($_GET['redirect_to']) && !empty($_GET['redirect_to'])) {
                 $login_url = add_query_arg('redirect_to', urlencode($_GET['redirect_to']), $login_url);
             }
-            
+
             wp_redirect($login_url);
             exit;
         }
@@ -3078,13 +3078,13 @@ function wwmt_ads_render_admin_page()
 ?>
     <div class="wrap">
         <h1>Advertisement Spaces Manager</h1>
-        <p class="wwmt-add-label-description">Manage your advertisement spaces use this shortcode [wwmt_ad space_id="wwmt-advertisment-space-01"] example. 
+        <p class="wwmt-add-label-description">Manage your advertisement spaces use this shortcode [wwmt_ad space_id="wwmt-advertisment-space-01"] example.
             We already provide a shortcode for each advertisement space. We pre build 5 spaces. You can use them directly in posts, pages, or widgets.</p>
         <p>Shortcode examples:<br>
-            [wwmt_ad space_id="wwmt-advertisment-space-01"], 
-            [wwmt_ad space_id="wwmt-advertisment-space-02"], 
-            [wwmt_ad space_id="wwmt-advertisment-space-03"], 
-            [wwmt_ad space_id="wwmt-advertisment-space-04"], 
+            [wwmt_ad space_id="wwmt-advertisment-space-01"],
+            [wwmt_ad space_id="wwmt-advertisment-space-02"],
+            [wwmt_ad space_id="wwmt-advertisment-space-03"],
+            [wwmt_ad space_id="wwmt-advertisment-space-04"],
             [wwmt_ad space_id="wwmt-advertisment-space-05"]
         </p>
         <div class="wwmt-ads-container">
@@ -3262,25 +3262,44 @@ function wwmt_ad_shortcode($atts)
 }
 add_action('wp_head', 'wwmt_ads_frontend_styles');
 
+
 // ============================================================================
 // 44.  CUSTOMIZE COMMENT FORM - REMOVE EMAIL/WEBSITE, ADD LOGIN/REGISTER BUTTONS
 // ============================================================================
 
-// Remove email and website fields from comment form - STRONGER METHOD
+// Remove email and website fields from comment form
 add_filter('comment_form_default_fields', 'remove_comment_fields', 999);
-function remove_comment_fields($fields) {
+function remove_comment_fields($fields)
+{
     // Remove email field
     unset($fields['email']);
-    
+
     // Remove website/URL field
     unset($fields['url']);
-    
+
     return $fields;
 }
 
-// Alternative method - hide fields with CSS if filter doesn't work
+// Make email optional for comments (CRITICAL FIX)
+add_filter('pre_comment_on_post', 'allow_anonymous_comments');
+function allow_anonymous_comments($comment_post_ID)
+{
+    // Allow comments without email
+    if (!is_user_logged_in()) {
+        // Set a default email if none provided
+        if (empty($_POST['email'])) {
+            $_POST['email'] = 'anonymous@example.com';
+        }
+    }
+}
+
+// Alternative: Modify comment requirements
+add_filter('option_require_name_email', '__return_false');
+
+// Hide fields with CSS
 add_action('wp_head', 'hide_comment_fields_css');
-function hide_comment_fields_css() {
+function hide_comment_fields_css()
+{
     echo '<style>
         /* Hide email and website fields */
         #fl-email,
@@ -3291,151 +3310,95 @@ function hide_comment_fields_css() {
         .comment-form-url {
             display: none !important;
         }
-        
-        /* Disable comment form for non-logged-in users */
-        body:not(.logged-in) #fl-comment-form textarea,
-        body:not(.logged-in) #fl-comment-form input[type="text"],
-        body:not(.logged-in) #fl-comment-form input[type="submit"] {
-            opacity: 0.5;
-            pointer-events: none;
-            cursor: not-allowed;
-        }
-        
-        /* Style the must login message */
-        .must-log-in-message {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            color: #856404;
-        }
-        
-        .must-log-in-message a {
-            color: #0073aa;
-            font-weight: bold;
-            text-decoration: underline;
-        }
     </style>';
 }
 
 // Remove fields using JavaScript as backup
 add_action('wp_footer', 'remove_fields_with_js');
-function remove_fields_with_js() {
-    ?>
+function remove_fields_with_js()
+{
+?>
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Remove email field and label
-        var emailInput = document.getElementById('fl-email');
-        var emailLabel = document.querySelector('label[for="fl-email"]');
-        if(emailInput) emailInput.closest('br')?.previousElementSibling?.remove();
-        if(emailInput) emailInput.nextElementSibling?.remove();
-        if(emailInput) emailInput.remove();
-        if(emailLabel) emailLabel.remove();
-        
-        // Remove website field and label
-        var urlInput = document.getElementById('fl-url');
-        var urlLabel = document.querySelector('label[for="fl-url"]');
-        if(urlInput) urlInput.closest('br')?.previousElementSibling?.remove();
-        if(urlInput) urlInput.nextElementSibling?.remove();
-        if(urlInput) urlInput.remove();
-        if(urlLabel) urlLabel.remove();
-        
-        // Disable comment form if user is not logged in
-        var isLoggedIn = document.body.classList.contains('logged-in');
-        if (!isLoggedIn) {
-            var commentForm = document.getElementById('fl-comment-form');
-            if (commentForm) {
-                // Disable all form inputs
-                var inputs = commentForm.querySelectorAll('input, textarea');
-                inputs.forEach(function(input) {
-                    input.disabled = true;
-                    input.style.cursor = 'not-allowed';
-                });
-                
-                // Prevent form submission
-                commentForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    alert('You must be logged in to post a comment. Please login or register first.');
-                    return false;
-                });
+        document.addEventListener('DOMContentLoaded', function() {
+            // Remove email field and label
+            var emailInput = document.getElementById('fl-email');
+            var emailLabel = document.querySelector('label[for="fl-email"]');
+            if (emailInput) {
+                emailInput.closest('br')?.previousElementSibling?.remove();
+                emailInput.nextElementSibling?.remove();
+                emailInput.remove();
             }
-        }
-    });
+            if (emailLabel) emailLabel.remove();
+
+            // Remove website field and label
+            var urlInput = document.getElementById('fl-url');
+            var urlLabel = document.querySelector('label[for="fl-url"]');
+            if (urlInput) {
+                urlInput.closest('br')?.previousElementSibling?.remove();
+                urlInput.nextElementSibling?.remove();
+                urlInput.remove();
+            }
+            if (urlLabel) urlLabel.remove();
+        });
+
+        // Add placehodler 
+        document.addEventListener('DOMContentLoaded', function() {
+            const comment = document.getElementById('fl-comment');
+            const author = document.getElementById('fl-author');
+
+            if (comment) comment.placeholder = 'ޚިޔާލު';
+            if (author) author.placeholder = 'ނަން';
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            var submitBtn = document.getElementById("fl-comment-form-submit");
+            if (submitBtn) {
+                submitBtn.value = "ފޮނުވާ";
+            }
+        });
     </script>
-    <?php
+<?php
 }
 
-// Require login to comment - disable form for non-logged-in users
-add_filter('comment_form_defaults', 'require_login_to_comment');
-function require_login_to_comment($defaults) {
-    if (!is_user_logged_in()) {
-        $defaults['must_log_in'] = '<div class="must-log-in-message">' .
-            sprintf(
-                __('You must be <a href="%1$s">logged in</a> to post a comment. Don\'t have an account? <a href="%2$s">Register here</a>.'),
-                wp_login_url(get_permalink()),
-                home_url('/user-signup/')
-            ) .
-            '</div>';
-        $defaults['logged_in_as'] = '';
-    }
-    return $defaults;
-}
-
-// Add login and registration buttons before comment form
+// OPTIONAL: Show login/register buttons for non-logged-in users
 add_action('comment_form_before', 'add_login_register_buttons');
-function add_login_register_buttons() {
-    // Only show buttons if user is NOT logged in
+function add_login_register_buttons()
+{
     if (!is_user_logged_in()) {
-        // Your custom registration URL with return URL parameter
         $current_url = get_permalink();
         $registration_url = add_query_arg('redirect_to', urlencode($current_url), home_url('/user-signup/'));
         $login_url = wp_login_url($current_url);
-        
-        echo '<div class="comment-auth-buttons" style="margin-bottom: 20px;">';
-        echo '<p style="margin-bottom: 15px;"><strong>You must be logged in to comment.</strong></p>';
-        echo '<a href="' . esc_url($login_url) . '" class="btn btn-primary" style="margin-right: 10px;">Login</a>';
+
+        echo '<div class="comment-auth-buttons">';
+        echo '<div class="comment-social-login">';
+        echo '<a href="#" class="social-btn facebook"><i class="fab fa-facebook-f"></i></a>';
+        echo '<a href="#" class="social-btn google"><i class="fab fa-google"></i></a>';
+        echo '</div>';
+
+        echo '<div class="comment-auth-actions">';
+        echo '<a href="' . esc_url($login_url) . '" class="btn btn-primary">Login</a>';
         echo '<a href="' . esc_url($registration_url) . '" class="btn btn-secondary">Register</a>';
+        echo '</div>';
+
         echo '</div>';
     }
 }
 
+
 // Custom CSS for styling
-add_action('wp_head', 'comment_form_custom_css');
-function comment_form_custom_css() {
-    echo '<style>
-        .comment-auth-buttons {
-            padding: 15px;
-            background: #f5f5f5;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-        }
-        .comment-auth-buttons .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            text-decoration: none;
-            border-radius: 4px;
-            transition: all 0.3s ease;
-        }
-        .comment-auth-buttons .btn-primary {
-            background-color: #0073aa;
-            color: white;
-            border: 1px solid #0073aa;
-        }
-        .comment-auth-buttons .btn-primary:hover {
-            background-color: #005177;
-        }
-        .comment-auth-buttons .btn-secondary {
-            background-color: #fff;
-            color: #0073aa;
-            border: 1px solid #0073aa;
-        }
-        .comment-auth-buttons .btn-secondary:hover {
-            background-color: #0073aa;
-            color: white;
-        }
-    </style>';
+add_action('wp_enqueue_scripts', 'enqueue_comment_auth_css');
+function enqueue_comment_auth_css()
+{
+    wp_enqueue_style(
+        'comment-auth-style',
+        plugin_dir_url(__FILE__) . 'css/comment-auth.css',
+        array(),
+        '1.0.0'
+    );
 }
+
+
+
 
 // ============================================================================
 // 45.  INCREASE UPLOAD LIMIT FOR LARGE AUDIO FILES
@@ -3471,5 +3434,3 @@ add_filter('upload_mimes', function ($mimes) {
     $mimes['m4a']  = 'audio/mp4';
     return $mimes;
 });
-
-

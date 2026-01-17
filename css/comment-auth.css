@@ -1,0 +1,184 @@
+/* Make fl-comments a flex container */
+.fl-comments {
+    display: flex;
+    flex-direction: column;
+    direction: rtl;
+}
+
+/* Move comment form to top */
+.comment-respond {
+    order: 1;
+}
+
+/* Move comments list below */
+.fl-comments-list {
+    order: 2;
+
+}
+
+/* Hide Labels   */
+#respond label[for="fl-comment"],
+#respond label[for="fl-author"] {
+    display: none !important;
+}
+
+
+/* Comment form  */
+.fl-comment-form {
+    display: flex;
+    flex-direction: column;
+
+}
+
+#fl-comment-form {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Order fields */
+#fl-author {
+    order: 1;
+    direction: rtl;
+    text-align: right;
+    margin-bottom: 10px;
+}
+
+#fl-comment {
+    order: 2;
+    direction: rtl;
+    text-align: right;
+}
+
+#bb-comment-word-count {
+    order: 3;
+    margin-bottom: 20px;
+}
+
+.comment-form-cookies-consent {
+    order: 4;
+}
+
+.form-submit {
+    order: 5;
+}
+
+.comment-form-cookies-consent {
+    display: none;
+}
+
+input#fl-author,
+textarea#fl-comment {
+    border: solid 1px #1e2939 !important;
+    border-radius: .5rem;
+}
+
+input#fl-author:focus,
+textarea#fl-comment:focus {
+    /* Keeps your dark blue border */
+    border: solid 2px #1e2939 !important;
+
+    /* Removes default outline */
+    outline: none;
+
+    /* Adds the Light Dark Drop Shadow */
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Css Start  */
+.comment-auth-buttons {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 15px;
+    background: #f0f8ff;
+    border-radius: 5px;
+    border: 1px solid #d3e8f7;
+    flex-wrap: wrap;
+    /* allows wrap on small screens */
+}
+
+/* Remove paragraph margin */
+.comment-auth-buttons p {
+    margin: 0;
+    white-space: nowrap;
+    font-size: 14px;
+}
+
+/* Social icons inline */
+.comment-social-login {
+    display: flex;
+    gap: 8px;
+    order: 1;
+}
+
+/* Buttons inline */
+.comment-auth-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Social buttons */
+.social-btn {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 15px;
+    text-decoration: none;
+}
+
+.social-btn.facebook {
+    background: #1877f2;
+}
+
+.social-btn.google {
+    background: #db4437;
+}
+
+/* Login/Register buttons */
+.comment-auth-buttons .btn {
+    padding: 8px 16px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.comment-auth-buttons .btn-primary {
+    background-color: #0073aa;
+    color: #fff;
+    border: 1px solid #0073aa;
+}
+
+.comment-auth-buttons .btn-primary:hover {
+    background-color: #005177;
+}
+
+.comment-auth-buttons .btn-secondary {
+    background-color: #fff;
+    color: #0073aa;
+    border: 1px solid #0073aa;
+}
+
+.comment-auth-buttons .btn-secondary:hover {
+    background-color: #0073aa;
+    color: #fff;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .comment-auth-buttons {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        font-size: 13px;
+    }
+
+    .comment-social-login,
+    .comment-auth-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
