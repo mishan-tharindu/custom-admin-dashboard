@@ -1,0 +1,228 @@
+.cad-comments-accordion-container {
+    margin-top: 20px;
+}
+
+.cad-post-accordion-item {
+    background: #fff;
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.cad-post-accordion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    cursor: pointer;
+    background: #f9f9f9;
+    transition: background 0.3s;
+}
+
+.cad-post-accordion-header:hover {
+    background: #f0f0f0;
+}
+
+.cad-post-accordion-item.active .cad-post-accordion-header {
+    background: #e8f4f8;
+    border-bottom: 1px solid #ddd;
+}
+
+.cad-post-info {
+    flex: 1;
+}
+
+.cad-post-title {
+    margin: 0 0 5px 0;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cad-toggle-icon {
+    display: inline-block;
+    transition: transform 0.3s;
+    font-size: 12px;
+    color: #666;
+}
+
+.cad-post-accordion-item.active .cad-toggle-icon {
+    transform: rotate(90deg);
+}
+
+.cad-post-meta {
+    display: flex;
+    gap: 15px;
+    font-size: 13px;
+    color: #666;
+}
+
+.cad-post-meta a {
+    text-decoration: none;
+    color: #0073aa;
+}
+
+.cad-post-meta a:hover {
+    text-decoration: underline;
+}
+
+.cad-post-type {
+    background: #eee;
+    padding: 2px 8px;
+    border-radius: 3px;
+    text-transform: capitalize;
+}
+
+.cad-comment-counts {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.cad-count-badge {
+    padding: 5px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.cad-count-badge.cad-approved {
+    background: #d4edda;
+    color: #155724;
+}
+
+.cad-count-badge.cad-pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.cad-count-badge.cad-spam {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.cad-count-badge.cad-trash {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+.cad-count-badge.cad-total {
+    background: #e7f3ff;
+    color: #004085;
+}
+
+.cad-post-accordion-content {
+    padding: 20px;
+    background: #fff;
+}
+
+.cad-loading-comments {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+.cad-comment-author-info {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.cad-comment-author-info img {
+    border-radius: 50%;
+}
+
+.cad-comment-content {
+    max-width: 100%;
+}
+
+.cad-comment-content p {
+    margin: 5px 0;
+}
+
+.cad-comment-status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.cad-comment-status-badge.cad-status-1 {
+    background: #d4edda;
+    color: #155724;
+}
+
+.cad-comment-status-badge.cad-status-0 {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.cad-comment-status-badge.cad-status-spam {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.cad-comment-status-badge.cad-status-trash {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+.cad-comment-date {
+    white-space: nowrap;
+}
+
+.cad-comment-actions {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.cad-comment-actions .button {
+    margin: 0;
+}
+
+.wp-list-table.comments {
+    margin-top: 0;
+}
+
+.wp-list-table.comments th {
+    background: #f9f9f9;
+    font-weight: 600;
+}
+
+.wp-list-table.comments td {
+    vertical-align: top;
+    padding: 12px 10px;
+}
+
+.cad-comment-row {
+    transition: background 0.2s;
+}
+
+.cad-comment-row:hover {
+    background: #f9f9f9;
+}
+
+@media (max-width: 782px) {
+    .cad-post-accordion-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .cad-comment-counts {
+        flex-wrap: wrap;
+    }
+    
+    .cad-comment-actions {
+        flex-direction: column;
+    }
+    
+    .cad-comment-actions .button {
+        width: 100%;
+    }
+}

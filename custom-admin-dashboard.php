@@ -2832,7 +2832,8 @@ function mt_bb_comment_word_limit()
 
 // Hook to enqueue scripts and styles
 add_action('wp_enqueue_scripts', 'emoji_reactions_enqueue_assets');
-function emoji_reactions_enqueue_assets() {
+function emoji_reactions_enqueue_assets()
+{
     wp_enqueue_script('emoji-reactions', plugin_dir_url(__FILE__) . 'emoji-reactions.js', ['jquery'], '1.1', true);
     wp_enqueue_style('emoji-reactions', plugin_dir_url(__FILE__) . 'emoji-reactions.css', [], '1.1');
 
@@ -2843,7 +2844,8 @@ function emoji_reactions_enqueue_assets() {
 }
 
 // Helper function for Short Relative Time (e.g., "1 hour", "2 yr")
-function get_short_relative_time($comment_date) {
+function get_short_relative_time($comment_date)
+{
     $timestamp = strtotime($comment_date);
     $diff = current_time('timestamp') - $timestamp;
 
@@ -2872,7 +2874,8 @@ function get_short_relative_time($comment_date) {
 
 // Display emoji reactions below each comment
 add_filter('comment_text', 'emoji_reactions_display', 10, 3);
-function emoji_reactions_display($comment_text, $comment, $args) {
+function emoji_reactions_display($comment_text, $comment, $args)
+{
     $comment_id = $comment->comment_ID;
 
     // 1. Get Relative Date
@@ -2916,7 +2919,8 @@ function emoji_reactions_display($comment_text, $comment, $args) {
 }
 
 // Get user identifier
-function get_user_id_for_reaction() {
+function get_user_id_for_reaction()
+{
     if (is_user_logged_in()) {
         return 'user_' . get_current_user_id();
     } else {
@@ -2925,7 +2929,8 @@ function get_user_id_for_reaction() {
 }
 
 // Check if user has reacted
-function has_user_reacted($comment_id, $emoji_type, $user_id) {
+function has_user_reacted($comment_id, $emoji_type, $user_id)
+{
     $reactions = get_comment_meta($comment_id, 'emoji_reactions_users', true);
     if (!is_array($reactions) || !isset($reactions[$emoji_type])) {
         return false;
@@ -2934,7 +2939,8 @@ function has_user_reacted($comment_id, $emoji_type, $user_id) {
 }
 
 // Get count
-function get_emoji_reaction_count($comment_id, $emoji_type) {
+function get_emoji_reaction_count($comment_id, $emoji_type)
+{
     $reactions = get_comment_meta($comment_id, 'emoji_reactions_users', true);
     if (!is_array($reactions) || !isset($reactions[$emoji_type])) {
         return 0;
@@ -2945,7 +2951,8 @@ function get_emoji_reaction_count($comment_id, $emoji_type) {
 // AJAX handler - Modified for Mutual Exclusivity (Only 1 emoji allowed)
 add_action('wp_ajax_emoji_reaction', 'handle_emoji_reaction');
 add_action('wp_ajax_nopriv_emoji_reaction', 'handle_emoji_reaction');
-function handle_emoji_reaction() {
+function handle_emoji_reaction()
+{
     check_ajax_referer('emoji_reactions_nonce', 'nonce');
 
     $comment_id = intval($_POST['comment_id']);
@@ -3144,14 +3151,13 @@ function wwmt_ads_render_admin_page()
                     <div class="wwmt-ad-redirect-url">
                         <label for="redirect-url-<?php echo esc_attr($space_id); ?>">Redirect URL:</label>
                         <div class="wwmt-url-input-group">
-                            <input 
-                                type="url" 
-                                id="redirect-url-<?php echo esc_attr($space_id); ?>" 
+                            <input
+                                type="url"
+                                id="redirect-url-<?php echo esc_attr($space_id); ?>"
                                 class="wwmt-redirect-url-input"
                                 data-space-id="<?php echo esc_attr($space_id); ?>"
                                 placeholder="https://example.com"
-                                value="<?php echo esc_url(get_option("wwmt_ad_redirect_url_{$space_id}")); ?>" 
-                            />
+                                value="<?php echo esc_url(get_option("wwmt_ad_redirect_url_{$space_id}")); ?>" />
                             <button type="button"
                                 class="button button-secondary wwmt-save-url-btn"
                                 data-space-id="<?php echo esc_attr($space_id); ?>">
@@ -3546,3 +3552,435 @@ add_filter('upload_mimes', function ($mimes) {
     $mimes['m4a']  = 'audio/mp4';
     return $mimes;
 });
+
+// ============================================================================
+// 46. COMMENTS ACCORDION VIEW - GROUP COMMENTS BY POST
+// ============================================================================
+
+/**
+ * Add submenu page for Comments by Post view
+ */
+add_action('admin_menu', 'cad_add_comments_accordion_menu');
+function cad_add_comments_accordion_menu() {
+    add_submenu_page(
+        'my-plugin-slug',
+        'Comments by Post',
+        'Comments by Post',
+        'moderate_comments',
+        'comments-by-post',
+        'cad_render_comments_accordion_page'
+    );
+}
+
+/**
+ * Enqueue scripts and styles for comments accordion
+ */
+add_action('admin_enqueue_scripts', 'cad_enqueue_comments_accordion_assets');
+function cad_enqueue_comments_accordion_assets($hook) {
+    if ($hook !== 'custom-plugin_page_comments-by-post') {
+        return;
+    }
+    
+    // Enqueue CSS
+    wp_enqueue_style(
+        'cad-comments-accordion-css',
+        plugin_dir_url(__FILE__) . 'css/comments-accordion.css',
+        array(),
+        '1.0.0'
+    );
+    
+    // Enqueue JavaScript
+    wp_enqueue_script(
+        'cad-comments-accordion-js',
+        plugin_dir_url(__FILE__) . 'js/comments-accordion.js',
+        array('jquery'),
+        '1.0.1',
+        true
+    );
+    
+    // Localize script
+    wp_localize_script('cad-comments-accordion-js', 'cadCommentsAccordion', array(
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('cad_comments_accordion_nonce')
+    ));
+}
+
+/**
+ * Render the Comments by Post page
+ */
+function cad_render_comments_accordion_page() {
+    global $wpdb;
+    
+    // Get all posts that have comments (including trash)
+    $posts_with_comments = $wpdb->get_results("
+        SELECT p.ID, p.post_title, p.post_type, 
+               COUNT(c.comment_ID) as total_comments,
+               SUM(CASE WHEN c.comment_approved = '1' THEN 1 ELSE 0 END) as approved_count,
+               SUM(CASE WHEN c.comment_approved = '0' THEN 1 ELSE 0 END) as pending_count,
+               SUM(CASE WHEN c.comment_approved = 'spam' THEN 1 ELSE 0 END) as spam_count,
+               SUM(CASE WHEN c.comment_approved = 'trash' THEN 1 ELSE 0 END) as trash_count
+        FROM {$wpdb->posts} p
+        INNER JOIN {$wpdb->comments} c ON p.ID = c.comment_post_ID
+        GROUP BY p.ID
+        ORDER BY p.post_date DESC
+    ");
+    
+    ?>
+    <div class="wrap">
+        <h1 class="wp-heading-inline">Comments by Post</h1>
+        <hr class="wp-header-end">
+        
+        <div class="cad-comments-accordion-container">
+            <?php if (empty($posts_with_comments)): ?>
+                <p>No comments found.</p>
+            <?php else: ?>
+                <?php foreach ($posts_with_comments as $post): ?>
+                    <div class="cad-post-accordion-item" data-post-id="<?php echo esc_attr($post->ID); ?>">
+                        <div class="cad-post-accordion-header">
+                            <div class="cad-post-info">
+                                <h3 class="cad-post-title">
+                                    <span class="cad-toggle-icon">▶</span>
+                                    <?php echo esc_html($post->post_title); ?>
+                                </h3>
+                                <div class="cad-post-meta">
+                                    <span class="cad-post-type"><?php echo esc_html($post->post_type); ?></span>
+                                    <a href="<?php echo get_permalink($post->ID); ?>" target="_blank">View Post</a>
+                                    <a href="<?php echo get_edit_post_link($post->ID); ?>">Edit Post</a>
+                                </div>
+                            </div>
+                            <div class="cad-comment-counts">
+                                <span class="cad-count-badge cad-approved" title="Approved" data-count-type="approved">
+                                    ✓ <span class="count-number"><?php echo $post->approved_count; ?></span>
+                                </span>
+                                <?php if ($post->pending_count > 0): ?>
+                                    <span class="cad-count-badge cad-pending" title="Pending" data-count-type="pending">
+                                        ⏱ <span class="count-number"><?php echo $post->pending_count; ?></span>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="cad-count-badge cad-pending" title="Pending" data-count-type="pending" style="display: none;">
+                                        ⏱ <span class="count-number">0</span>
+                                    </span>
+                                <?php endif; ?>
+                                <?php if ($post->spam_count > 0): ?>
+                                    <span class="cad-count-badge cad-spam" title="Spam" data-count-type="spam">
+                                        ⚠ <span class="count-number"><?php echo $post->spam_count; ?></span>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="cad-count-badge cad-spam" title="Spam" data-count-type="spam" style="display: none;">
+                                        ⚠ <span class="count-number">0</span>
+                                    </span>
+                                <?php endif; ?>
+                                <?php if ($post->trash_count > 0): ?>
+                                    <span class="cad-count-badge cad-trash" title="Trash" data-count-type="trash">
+                                        🗑 <span class="count-number"><?php echo $post->trash_count; ?></span>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="cad-count-badge cad-trash" title="Trash" data-count-type="trash" style="display: none;">
+                                        🗑 <span class="count-number">0</span>
+                                    </span>
+                                <?php endif; ?>
+                                <span class="cad-count-badge cad-total" data-count-type="total">
+                                    Total: <span class="count-number"><?php echo $post->total_comments; ?></span>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="cad-post-accordion-content" style="display: none;">
+                            <div class="cad-loading-comments">Loading comments...</div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php
+}
+
+/**
+ * AJAX handler to load comments for a specific post
+ */
+add_action('wp_ajax_cad_load_post_comments', 'cad_load_post_comments_ajax');
+function cad_load_post_comments_ajax() {
+    check_ajax_referer('cad_comments_accordion_nonce', 'nonce');
+    
+    $post_id = intval($_POST['post_id']);
+    
+    // Get approved and pending comments
+    $approved_pending = get_comments(array(
+        'post_id' => $post_id,
+        'status' => 'all', // Gets approved and pending
+        'orderby' => 'comment_date',
+        'order' => 'DESC'
+    ));
+    
+    // Get spam comments separately
+    $spam_comments = get_comments(array(
+        'post_id' => $post_id,
+        'status' => 'spam',
+        'orderby' => 'comment_date',
+        'order' => 'DESC'
+    ));
+    
+    // Get trashed comments separately
+    $trashed_comments = get_comments(array(
+        'post_id' => $post_id,
+        'status' => 'trash',
+        'orderby' => 'comment_date',
+        'order' => 'DESC'
+    ));
+    
+    // Merge all comments
+    $all_comments = array_merge($approved_pending, $spam_comments, $trashed_comments);
+    
+    // Sort by date descending
+    usort($all_comments, function($a, $b) {
+        return strtotime($b->comment_date) - strtotime($a->comment_date);
+    });
+    
+    ob_start();
+    ?>
+    <table class="wp-list-table fixed widefat striped comments">
+        <thead>
+            <tr>
+                <th style="width: 15%;">Author</th>
+                <th style="width: 35%;">Comment</th>
+                <th style="width: 10%;">Status</th>
+                <th style="width: 15%;">Date</th>
+                <th style="width: 25%;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if (empty($all_comments)): ?>
+                <tr>
+                    <td colspan="5" style="text-align: center;">No comments found.</td>
+                </tr>
+            <?php else: ?>
+                <?php foreach ($all_comments as $comment): ?>
+                    <tr class="cad-comment-row comment-<?php echo $comment->comment_ID; ?>" data-comment-id="<?php echo $comment->comment_ID; ?>" data-current-status="<?php echo esc_attr($comment->comment_approved); ?>">
+                        <td>
+                            <div class="cad-comment-author-info">
+                                <?php echo get_avatar($comment, 32); ?>
+                                <div>
+                                    <strong><?php echo esc_html($comment->comment_author); ?></strong><br>
+                                    <?php if ($comment->comment_author_email): ?>
+                                        <small><?php echo esc_html($comment->comment_author_email); ?></small>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="cad-comment-content">
+                                <?php echo wp_kses_post(wpautop($comment->comment_content)); ?>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="cad-comment-status-badge cad-status-<?php echo esc_attr($comment->comment_approved); ?>">
+                                <?php 
+                                if ($comment->comment_approved == '1') echo 'Approved';
+                                elseif ($comment->comment_approved == '0') echo 'Pending';
+                                elseif ($comment->comment_approved == 'spam') echo 'Spam';
+                                elseif ($comment->comment_approved == 'trash') echo 'Trash';
+                                else echo ucfirst($comment->comment_approved);
+                                ?>
+                            </span>
+                        </td>
+                        <td>
+                            <div class="cad-comment-date">
+                                <?php echo get_comment_date('Y/m/d', $comment); ?><br>
+                                <small><?php echo get_comment_date('g:i a', $comment); ?></small>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="cad-comment-actions">
+                                <?php if ($comment->comment_approved == 'trash'): ?>
+                                    <button class="button button-small cad-restore-comment" data-comment-id="<?php echo $comment->comment_ID; ?>">
+                                        Restore
+                                    </button>
+                                    <button class="button button-small cad-delete-comment" data-comment-id="<?php echo $comment->comment_ID; ?>">
+                                        Delete Permanently
+                                    </button>
+                                <?php else: ?>
+                                    <?php if ($comment->comment_approved != '1'): ?>
+                                        <button class="button button-small cad-approve-comment" data-comment-id="<?php echo $comment->comment_ID; ?>">
+                                            Approve
+                                        </button>
+                                    <?php else: ?>
+                                        <button class="button button-small cad-unapprove-comment" data-comment-id="<?php echo $comment->comment_ID; ?>">
+                                            Unapprove
+                                        </button>
+                                    <?php endif; ?>
+                                    
+                                    <a href="<?php echo get_edit_comment_link($comment->comment_ID); ?>" class="button button-small">
+                                        Edit
+                                    </a>
+                                    
+                                    <?php if ($comment->comment_approved != 'spam'): ?>
+                                        <button class="button button-small cad-spam-comment" data-comment-id="<?php echo $comment->comment_ID; ?>">
+                                            Spam
+                                        </button>
+                                    <?php else: ?>
+                                        <button class="button button-small cad-unspam-comment" data-comment-id="<?php echo $comment->comment_ID; ?>">
+                                            Not Spam
+                                        </button>
+                                    <?php endif; ?>
+                                    
+                                    <button class="button button-small cad-trash-comment" data-comment-id="<?php echo $comment->comment_ID; ?>">
+                                        Trash
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </tbody>
+    </table>
+    <?php
+    
+    $html = ob_get_clean();
+    wp_send_json_success(array('html' => $html));
+}
+
+/**
+ * AJAX handler to toggle comment status
+ */
+add_action('wp_ajax_cad_toggle_comment_status', 'cad_ajax_toggle_comment_status');
+function cad_ajax_toggle_comment_status() {
+    check_ajax_referer('cad_comments_accordion_nonce', 'nonce');
+    
+    if (!current_user_can('moderate_comments')) {
+        wp_send_json_error('Insufficient permissions');
+    }
+    
+    $comment_id = intval($_POST['comment_id']);
+    $new_status = sanitize_text_field($_POST['status']);
+    
+    $result = wp_set_comment_status($comment_id, $new_status);
+    
+    if ($result) {
+        // Get updated counts for this post
+        $comment = get_comment($comment_id);
+        $post_id = $comment->comment_post_ID;
+        $counts = cad_get_comment_counts($post_id);
+        
+        wp_send_json_success(array(
+            'message' => 'Comment status updated',
+            'counts' => $counts
+        ));
+    } else {
+        wp_send_json_error('Failed to update comment status');
+    }
+}
+
+/**
+ * AJAX handler to trash comment
+ */
+add_action('wp_ajax_cad_trash_comment', 'cad_ajax_trash_comment');
+function cad_ajax_trash_comment() {
+    check_ajax_referer('cad_comments_accordion_nonce', 'nonce');
+    
+    if (!current_user_can('moderate_comments')) {
+        wp_send_json_error('Insufficient permissions');
+    }
+    
+    $comment_id = intval($_POST['comment_id']);
+    $comment = get_comment($comment_id);
+    $post_id = $comment->comment_post_ID;
+    
+    // Move to trash (not permanent delete)
+    $result = wp_trash_comment($comment_id);
+    
+    if ($result) {
+        $counts = cad_get_comment_counts($post_id);
+        wp_send_json_success(array(
+            'message' => 'Comment moved to trash',
+            'counts' => $counts
+        ));
+    } else {
+        wp_send_json_error('Failed to trash comment');
+    }
+}
+
+/**
+ * AJAX handler to restore comment from trash
+ */
+add_action('wp_ajax_cad_restore_comment', 'cad_ajax_restore_comment');
+function cad_ajax_restore_comment() {
+    check_ajax_referer('cad_comments_accordion_nonce', 'nonce');
+    
+    if (!current_user_can('moderate_comments')) {
+        wp_send_json_error('Insufficient permissions');
+    }
+    
+    $comment_id = intval($_POST['comment_id']);
+    $comment = get_comment($comment_id);
+    $post_id = $comment->comment_post_ID;
+    
+    // Restore from trash
+    $result = wp_untrash_comment($comment_id);
+    
+    if ($result) {
+        $counts = cad_get_comment_counts($post_id);
+        wp_send_json_success(array(
+            'message' => 'Comment restored',
+            'counts' => $counts
+        ));
+    } else {
+        wp_send_json_error('Failed to restore comment');
+    }
+}
+
+/**
+ * AJAX handler to delete comment
+ */
+add_action('wp_ajax_cad_delete_comment', 'cad_ajax_delete_comment');
+function cad_ajax_delete_comment() {
+    check_ajax_referer('cad_comments_accordion_nonce', 'nonce');
+    
+    if (!current_user_can('moderate_comments')) {
+        wp_send_json_error('Insufficient permissions');
+    }
+    
+    $comment_id = intval($_POST['comment_id']);
+    $comment = get_comment($comment_id);
+    $post_id = $comment->comment_post_ID;
+    
+    // Permanent delete
+    $result = wp_delete_comment($comment_id, true);
+    
+    if ($result) {
+        $counts = cad_get_comment_counts($post_id);
+        wp_send_json_success(array(
+            'message' => 'Comment permanently deleted',
+            'counts' => $counts
+        ));
+    } else {
+        wp_send_json_error('Failed to delete comment');
+    }
+}
+
+/**
+ * Helper function to get comment counts for a post
+ */
+function cad_get_comment_counts($post_id) {
+    global $wpdb;
+    
+    $counts = $wpdb->get_row($wpdb->prepare("
+        SELECT 
+            COUNT(*) as total,
+            SUM(CASE WHEN comment_approved = '1' THEN 1 ELSE 0 END) as approved,
+            SUM(CASE WHEN comment_approved = '0' THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN comment_approved = 'spam' THEN 1 ELSE 0 END) as spam,
+            SUM(CASE WHEN comment_approved = 'trash' THEN 1 ELSE 0 END) as trash
+        FROM {$wpdb->comments}
+        WHERE comment_post_ID = %d
+    ", $post_id), ARRAY_A);
+    
+    return array(
+        'total' => intval($counts['total']),
+        'approved' => intval($counts['approved']),
+        'pending' => intval($counts['pending']),
+        'spam' => intval($counts['spam']),
+        'trash' => intval($counts['trash'])
+    );
+}
