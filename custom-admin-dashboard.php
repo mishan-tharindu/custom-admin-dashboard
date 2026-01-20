@@ -2,8 +2,9 @@
 
 /**
  * Plugin Name: Custom Admin Dashboard
- * Description: A custom plugin to modify and clean up the WordPress admin dashboard. [wwmt_time_ago] or [wwmt_time_ago icon="clock"], [post_image_count], [date_weather], [wwmt_ad space_id="wwmt-advertisment-space-01"], [wwmt_ad space_id="wwmt-advertisment-space-02"], [wwmt_ad space_id="wwmt-advertisment-space-03"], [wwmt_ad space_id="wwmt-advertisment-space-04"], [wwmt_ad space_id="wwmt-advertisment-space-05"]
- * Version: 1.8.9
+ * Description: A custom plugin to modify and clean up the WordPress admin dashboard. [wwmt_time_ago] or [wwmt_time_ago icon="clock"], [post_image_count], [date_weather], [wwmt_ad space_id="wwmt-advertisment-space-01"], [wwmt_ad space_id="wwmt-advertisment-space-02"], [wwmt_ad space_id="wwmt-advertisment-space-03"], [wwmt_ad space_id="wwmt-advertisment-space-04"], [wwmt_ad space_id="wwmt-advertisment-space-05"],
+ * [post_reactions]
+ * Version: 1.9.1
  * Author: TechM
  * Author URI: https://yourwebsite.com
  * Text Domain: custom-admin-dashboard
@@ -3940,3 +3941,8 @@ function cad_get_comment_counts($post_id) {
         'trash' => intval($counts['trash'])
     );
 }
+
+   // ============================================================================
+   // 47. POST REACTIONS FEATURE
+   // ============================================================================
+   require_once plugin_dir_path(__FILE__) . 'post-reactions.php';

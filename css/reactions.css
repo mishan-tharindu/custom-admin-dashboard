@@ -1,0 +1,132 @@
+.post-reactions-container {
+    margin: 40px 0;
+    padding: 20px;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+.reactions-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+@media (min-width: 640px) {
+    .reactions-wrapper {
+        gap: 16px;
+    }
+}
+
+.reaction-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 70px;
+    justify-content: center;
+    padding: 8px;
+    background: transparent !important;
+    border: none !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+    position: relative;
+}
+
+.reaction-btn:hover {
+    transform: scale(1.1);
+}
+
+.reaction-btn:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+}
+
+.reaction-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.reaction-percentage {
+    font-size: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #9ca3af;
+    font-weight: 400;
+    transition: all 0.2s ease;
+}
+
+.reaction-percentage.has-votes {
+    color: #374151;
+    font-weight: 600;
+}
+
+.reaction-btn.active .reaction-percentage {
+    color: #1f2937;
+    font-weight: 400;
+}
+
+.reaction-icon-wrapper {
+    width: 32px;
+    height: 32px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (min-width: 640px) {
+    .reaction-icon-wrapper {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+.reaction-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    transition: all 0.2s ease;
+    filter: grayscale(100%) brightness(0.8);
+}
+
+@media (min-width: 640px) {
+    .reaction-icon {
+        width: 32px;
+        height: 32px;
+    }
+}
+
+/* Hover effect - show color */
+.reaction-btn:hover .reaction-icon,
+.reaction-btn.active .reaction-icon {
+    filter: grayscale(0%) brightness(1);
+}
+
+/* Specific styling for angry reaction when active */
+.reaction-btn[data-reaction="angry"].active .reaction-percentage {
+    color: #dc2626;
+}
+
+/* Optional: Add subtle animation on click */
+.reaction-btn:active {
+    transform: scale(0.95);
+}
+
+/* Loading state */
+.reaction-btn.loading {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.reaction-btn.loading .reaction-icon {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
