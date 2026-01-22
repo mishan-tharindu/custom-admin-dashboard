@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Custom Admin Dashboard
  * Description: A custom plugin to modify and clean up the WordPress admin dashboard. [wwmt_time_ago] or [wwmt_time_ago icon="clock"], [post_image_count], [date_weather], [wwmt_ad space_id="wwmt-advertisment-space-01"], [wwmt_ad space_id="wwmt-advertisment-space-02"], [wwmt_ad space_id="wwmt-advertisment-space-03"], [wwmt_ad space_id="wwmt-advertisment-space-04"], [wwmt_ad space_id="wwmt-advertisment-space-05"],[post_reactions]
- * Version: 1.9.4
+ * Version: 1.9.5
  * Author: TechM
  * Author URI: https://yourwebsite.com
  * Text Domain: custom-admin-dashboard
@@ -1538,6 +1538,18 @@ function enqueue_post_time_script()
     <script>
         var postTimesData = <?php echo json_encode($post_times); ?>;
 
+        // Function to abbreviate time units
+        function abbreviateTime(timeStr) {
+            return timeStr
+                .replace(/\b(\d+)\s+years?\b/gi, '$1 yr')
+                .replace(/\b(\d+)\s+months?\b/gi, '$1 mo')
+                .replace(/\b(\d+)\s+weeks?\b/gi, '$1 wk')
+                .replace(/\b(\d+)\s+days?\b/gi, '$1 d')
+                .replace(/\b(\d+)\s+hours?\b/gi, '$1 hr')
+                .replace(/\b(\d+)\s+minutes?\b/gi, '$1 min')
+                .replace(/\b(\d+)\s+seconds?\b/gi, '$1 sec');
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             var postTitles = document.querySelectorAll('.fl-post-grid-title');
             var postComments = document.querySelectorAll('.fl-post-feed-comments');
@@ -1568,25 +1580,21 @@ function enqueue_post_time_script()
                             // Get the original date text (e.g., "Jan 4, 2026") to show in parentheses
                             var originalDate = timeElapsedEl ? timeElapsedEl.textContent.trim() : '';
 
-                            // Construct the new HTML
-                            // Result: Posted: 2 hours ago (Jan 4, 2026)
-                            var dateSuffix = originalDate ? ' (' + originalDate + ')' : '';
+                            // Abbreviate the time string
+                            var abbreviatedTime = abbreviateTime(postTimesData[postId]);
 
-                            // var timeHtml = '<div class="fl-post-time-custom"><i class="far fa-clock"></i> <strong>Posted:</strong> ' + postTimesData[postId] + dateSuffix + '</div>';
+                            // Construct the new HTML
+                            // Result: Posted: 2 hr ago (Jan 4, 2026)
+                            var dateSuffix = originalDate ? ' (' + originalDate + ')' : '';
 
                             // Create time elapsed HTML with clock icon
                             var timeHtml = '<span class="fl-post-time-elapsed">' +
                                 '<i class="far fa-clock"></i> ' +
-                                postTimesData[postId] +
+                                abbreviatedTime +
                                 '</span>';
 
-
-
-                            // title.insertAdjacentHTML('afterend', timeHtml);
+                            // Insert the time HTML after the comment element
                             comment.insertAdjacentHTML('afterend', timeHtml);
-
-                            // var $commentsSpan = $metaContainer.find('.fl-post-feed-comments');
-
 
                             // Optional: Hide the original date element to avoid duplicates
                             if (timeElapsedEl) {
