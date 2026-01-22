@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Custom Admin Dashboard
  * Description: A custom plugin to modify and clean up the WordPress admin dashboard. [wwmt_time_ago] or [wwmt_time_ago icon="clock"], [post_image_count], [date_weather], [wwmt_ad space_id="wwmt-advertisment-space-01"], [wwmt_ad space_id="wwmt-advertisment-space-02"], [wwmt_ad space_id="wwmt-advertisment-space-03"], [wwmt_ad space_id="wwmt-advertisment-space-04"], [wwmt_ad space_id="wwmt-advertisment-space-05"],[post_reactions]
- * Version: 1.9.1
+ * Version: 1.9.2
  * Author: TechM
  * Author URI: https://yourwebsite.com
  * Text Domain: custom-admin-dashboard
@@ -622,7 +622,8 @@ add_action('wp_ajax_nopriv_get_post_time_ago', 'get_post_time_ago_ajax');
 /**
  * Add custom styling for the time elapsed display.
  */
-function custom_time_elapsed_enqueue_styles() {
+function custom_time_elapsed_enqueue_styles()
+{
     wp_enqueue_style(
         'custom-time-ago-styles', // Unique handle
         plugin_dir_url(__FILE__) . 'css/custom-time.css', // Path to file
@@ -692,7 +693,8 @@ function display_post_status_column($column, $post_id)
 }
 
 // Step 4: Add custom CSS for better styling
-function custom_css_enqueue_styles() {
+function custom_css_enqueue_styles()
+{
     wp_enqueue_style(
         'custom-css-styles', // Unique handle
         plugin_dir_url(__FILE__) . 'css/custom-css.css', // Path to file
@@ -1599,43 +1601,17 @@ function enqueue_post_time_script()
 <?php
 }
 
+// Enqueue external stylesheet
+add_action('wp_enqueue_scripts', 'post_time_enqueue_styles');
 
-// Add CSS styling for the post time
-add_action('wp_head', 'post_time_custom_css');
-
-function post_time_custom_css()
-{
-?>
-    <style>
-        .fl-post-time-custom {
-            background-color: #f9f9f9;
-            padding: 10px 0;
-            margin: 10px 0;
-            font-size: 14px;
-            color: #666;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .fl-post-time-custom strong {
-            color: #333;
-        }
-
-        .fl-post-time-custom i {
-            color: #007cba;
-        }
-
-        .fl-post-time-elapsed {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            margin-right: 10px;
-            font-size: 13px;
-            color: #666;
-        }
-    </style>
-<?php
+function post_time_enqueue_styles() {
+    // This looks for a file named 'frontend.css' inside a 'css' folder in your plugin directory
+    wp_enqueue_style(
+        'custom-post-time-css', // Handle name
+        plugin_dir_url(__FILE__) . 'css/other-frontend.css', // Path to file
+        array(),
+        '1.0'
+    );
 }
 
 // ============================================================================
@@ -1830,23 +1806,22 @@ function restrict_posts_by_user_role($query)
 }
 
 // ============================================================================
-// 35.  HIDE PUBLISH BUTTON FOR AUTHOR ROLE IN GUTENBERG EDITOR
+// 35. RESTRICT AUTHOR PUBLISHING - AUTHORS CAN ONLY SAVE DRAFTS
 // ============================================================================
 
 /**
- * Hide Publish button and rename Save Draft for Author role in Gutenberg Editor
- * Using WordPress filters - No DOM manipulation
+ * Hide Publish button for Author role in Gutenberg Editor
+ * Force published posts back to draft when edited by Authors
  */
 
 add_action('enqueue_block_editor_assets', 'restrict_author_publish_gutenberg');
 
 function restrict_author_publish_gutenberg()
 {
-    // Get current user
     $current_user = wp_get_current_user();
 
     // Only apply to Authors
-    if (! in_array('author', $current_user->roles)) {
+    if (!in_array('author', $current_user->roles)) {
         return;
     }
 
@@ -1854,12 +1829,12 @@ function restrict_author_publish_gutenberg()
     wp_enqueue_script(
         'author-restrict-publish',
         plugin_dir_url(__FILE__) . 'js/author-restrict.js',
-        array('wp-blocks', 'wp-dom-ready', 'wp-edit-post', 'wp-components'),
-        '1.0',
+        array('wp-blocks', 'wp-dom-ready', 'wp-edit-post', 'wp-components', 'wp-data', 'wp-i18n', 'wp-hooks'),
+        '1.3',
         true
     );
 
-    // Add inline CSS to hide publish button safely
+    // Add inline CSS to hide publish button
     wp_add_inline_style(
         'wp-edit-post',
         '
@@ -1870,6 +1845,83 @@ function restrict_author_publish_gutenberg()
         '
     );
 }
+
+/**
+ * Force post status to draft when Author saves
+ * This ensures published posts return to draft when Authors edit them
+ */
+add_filter('wp_insert_post_data', 'force_author_draft_status', 10, 2);
+
+function force_author_draft_status($data, $postarr)
+{
+    // Only apply to Authors
+    if (!current_user_can('edit_posts') || current_user_can('publish_posts')) {
+        return $data;
+    }
+
+    // Check if this is a post (not a page or other post type)
+    if (!isset($data['post_type']) || $data['post_type'] !== 'post') {
+        return $data;
+    }
+
+    // Force status to draft regardless of what it was before
+    // This catches both new posts and edits to published posts
+    if (in_array($data['post_status'], array('publish', 'pending', 'future', 'private'))) {
+        $data['post_status'] = 'draft';
+    }
+
+    return $data;
+}
+
+/**
+ * Remove quick edit publish option for Authors
+ */
+add_filter('post_row_actions', 'remove_author_quick_edit_publish', 10, 2);
+
+function remove_author_quick_edit_publish($actions, $post)
+{
+    // Only apply to Authors
+    if (!current_user_can('edit_posts') || current_user_can('publish_posts')) {
+        return $actions;
+    }
+
+    // Remove inline "Quick Edit" that could bypass restrictions
+    if (isset($actions['inline hide-if-no-js'])) {
+        unset($actions['inline hide-if-no-js']);
+    }
+
+    return $actions;
+}
+
+/**
+ * Add notification message for Authors
+ */
+add_action('admin_notices', 'author_draft_notice');
+
+function author_draft_notice()
+{
+    global $pagenow, $post;
+    
+    // Only show on post edit screen
+    if ($pagenow !== 'post.php' || !isset($post)) {
+        return;
+    }
+
+    $current_user = wp_get_current_user();
+    
+    // Only for Authors
+    if (!in_array('author', $current_user->roles)) {
+        return;
+    }
+
+    // Show notice if editing a published post
+    if ($post->post_status === 'publish') {
+        echo '<div class="notice notice-info is-dismissible">
+            <p><strong>Note:</strong> When you save this published post, it will return to "Draft" status and require approval from an Editor or Administrator before being published again.</p>
+        </div>';
+    }
+}
+
 
 // ============================================================================
 // 36.  post URL as Post ID
@@ -2997,7 +3049,7 @@ add_action('admin_enqueue_scripts', 'wwmt_ads_enqueue_scripts');
 add_action('wp_ajax_wwmt_upload_ad_image', 'wwmt_handle_ad_image_upload');
 add_action('wp_ajax_wwmt_delete_ad_image', 'wwmt_handle_ad_image_delete');
 add_action('wp_ajax_wwmt_save_ad_url', 'wwmt_handle_ad_url_save');
-add_action('wp_head', 'wwmt_ads_frontend_styles');
+// add_action('wp_head', 'wwmt_ads_frontend_styles');
 add_shortcode('wwmt_ad', 'wwmt_ad_shortcode');
 
 /**
@@ -3009,7 +3061,7 @@ function wwmt_ads_register_admin_page()
         'my-plugin-slug',
         'Advertisement Spaces',
         'Advertisement Spaces',
-        'manage_options',
+        'moderate_comments',
         'wwmt-ad-manager',
         'wwmt_ads_render_admin_page'
     );
@@ -3059,7 +3111,7 @@ function wwmt_ads_enqueue_scripts($hook)
  */
 function wwmt_ads_render_admin_page()
 {
-    if (!current_user_can('manage_options')) {
+    if (!current_user_can('edit_posts')) {
         wp_die('Unauthorized access');
     }
 
@@ -3156,7 +3208,7 @@ function wwmt_handle_ad_image_upload()
 {
     check_ajax_referer('wwmt_ad_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!current_user_can('edit_posts')) {
         wp_send_json_error('Unauthorized access');
     }
 
@@ -3199,7 +3251,7 @@ function wwmt_handle_ad_image_delete()
 {
     check_ajax_referer('wwmt_ad_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!current_user_can('edit_posts')) {
         wp_send_json_error('Unauthorized access');
     }
 
@@ -3230,7 +3282,7 @@ function wwmt_handle_ad_url_save()
 {
     check_ajax_referer('wwmt_ad_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!current_user_can('edit_posts')) {
         wp_send_json_error('Unauthorized access');
     }
 
@@ -3370,23 +3422,6 @@ function allow_anonymous_comments($comment_post_ID)
 // Alternative: Modify comment requirements
 add_filter('option_require_name_email', '__return_false');
 
-// Hide fields with CSS
-add_action('wp_head', 'hide_comment_fields_css');
-function hide_comment_fields_css()
-{
-    echo '<style>
-        /* Hide email and website fields */
-        #fl-email,
-        label[for="fl-email"],
-        #fl-url,
-        label[for="fl-url"],
-        .comment-form-email,
-        .comment-form-url {
-            display: none !important;
-        }
-    </style>';
-}
-
 // Remove fields using JavaScript as backup
 add_action('wp_footer', 'remove_fields_with_js');
 function remove_fields_with_js()
@@ -3517,12 +3552,13 @@ add_filter('upload_mimes', function ($mimes) {
  * Add submenu page for Comments by Post view
  */
 add_action('admin_menu', 'cad_add_comments_accordion_menu');
-function cad_add_comments_accordion_menu() {
+function cad_add_comments_accordion_menu()
+{
     add_submenu_page(
         'my-plugin-slug',
         'Comments by Post',
         'Comments by Post',
-        'moderate_comments',
+        'edit_posts',
         'comments-by-post',
         'cad_render_comments_accordion_page'
     );
@@ -3532,11 +3568,12 @@ function cad_add_comments_accordion_menu() {
  * Enqueue scripts and styles for comments accordion
  */
 add_action('admin_enqueue_scripts', 'cad_enqueue_comments_accordion_assets');
-function cad_enqueue_comments_accordion_assets($hook) {
+function cad_enqueue_comments_accordion_assets($hook)
+{
     if ($hook !== 'custom-plugin_page_comments-by-post') {
         return;
     }
-    
+
     // Enqueue CSS
     wp_enqueue_style(
         'cad-comments-accordion-css',
@@ -3544,7 +3581,7 @@ function cad_enqueue_comments_accordion_assets($hook) {
         array(),
         '1.0.0'
     );
-    
+
     // Enqueue JavaScript
     wp_enqueue_script(
         'cad-comments-accordion-js',
@@ -3553,7 +3590,7 @@ function cad_enqueue_comments_accordion_assets($hook) {
         '1.0.1',
         true
     );
-    
+
     // Localize script
     wp_localize_script('cad-comments-accordion-js', 'cadCommentsAccordion', array(
         'ajax_url' => admin_url('admin-ajax.php'),
@@ -3564,9 +3601,10 @@ function cad_enqueue_comments_accordion_assets($hook) {
 /**
  * Render the Comments by Post page
  */
-function cad_render_comments_accordion_page() {
+function cad_render_comments_accordion_page()
+{
     global $wpdb;
-    
+
     // Get all posts that have comments (including trash)
     $posts_with_comments = $wpdb->get_results("
         SELECT p.ID, p.post_title, p.post_type, 
@@ -3580,12 +3618,12 @@ function cad_render_comments_accordion_page() {
         GROUP BY p.ID
         ORDER BY p.post_date DESC
     ");
-    
-    ?>
+
+?>
     <div class="wrap">
         <h1 class="wp-heading-inline">Comments by Post</h1>
         <hr class="wp-header-end">
-        
+
         <div class="cad-comments-accordion-container">
             <?php if (empty($posts_with_comments)): ?>
                 <p>No comments found.</p>
@@ -3640,7 +3678,7 @@ function cad_render_comments_accordion_page() {
                                 </span>
                             </div>
                         </div>
-                        
+
                         <div class="cad-post-accordion-content" style="display: none;">
                             <div class="cad-loading-comments">Loading comments...</div>
                         </div>
@@ -3649,18 +3687,19 @@ function cad_render_comments_accordion_page() {
             <?php endif; ?>
         </div>
     </div>
-    <?php
+<?php
 }
 
 /**
  * AJAX handler to load comments for a specific post
  */
 add_action('wp_ajax_cad_load_post_comments', 'cad_load_post_comments_ajax');
-function cad_load_post_comments_ajax() {
+function cad_load_post_comments_ajax()
+{
     check_ajax_referer('cad_comments_accordion_nonce', 'nonce');
-    
+
     $post_id = intval($_POST['post_id']);
-    
+
     // Get approved and pending comments
     $approved_pending = get_comments(array(
         'post_id' => $post_id,
@@ -3668,7 +3707,7 @@ function cad_load_post_comments_ajax() {
         'orderby' => 'comment_date',
         'order' => 'DESC'
     ));
-    
+
     // Get spam comments separately
     $spam_comments = get_comments(array(
         'post_id' => $post_id,
@@ -3676,7 +3715,7 @@ function cad_load_post_comments_ajax() {
         'orderby' => 'comment_date',
         'order' => 'DESC'
     ));
-    
+
     // Get trashed comments separately
     $trashed_comments = get_comments(array(
         'post_id' => $post_id,
@@ -3684,17 +3723,17 @@ function cad_load_post_comments_ajax() {
         'orderby' => 'comment_date',
         'order' => 'DESC'
     ));
-    
+
     // Merge all comments
     $all_comments = array_merge($approved_pending, $spam_comments, $trashed_comments);
-    
+
     // Sort by date descending
-    usort($all_comments, function($a, $b) {
+    usort($all_comments, function ($a, $b) {
         return strtotime($b->comment_date) - strtotime($a->comment_date);
     });
-    
+
     ob_start();
-    ?>
+?>
     <table class="wp-list-table fixed widefat striped comments">
         <thead>
             <tr>
@@ -3731,7 +3770,7 @@ function cad_load_post_comments_ajax() {
                         </td>
                         <td>
                             <span class="cad-comment-status-badge cad-status-<?php echo esc_attr($comment->comment_approved); ?>">
-                                <?php 
+                                <?php
                                 if ($comment->comment_approved == '1') echo 'Approved';
                                 elseif ($comment->comment_approved == '0') echo 'Pending';
                                 elseif ($comment->comment_approved == 'spam') echo 'Spam';
@@ -3765,11 +3804,11 @@ function cad_load_post_comments_ajax() {
                                             Unapprove
                                         </button>
                                     <?php endif; ?>
-                                    
+
                                     <a href="<?php echo get_edit_comment_link($comment->comment_ID); ?>" class="button button-small">
                                         Edit
                                     </a>
-                                    
+
                                     <?php if ($comment->comment_approved != 'spam'): ?>
                                         <button class="button button-small cad-spam-comment" data-comment-id="<?php echo $comment->comment_ID; ?>">
                                             Spam
@@ -3779,7 +3818,7 @@ function cad_load_post_comments_ajax() {
                                             Not Spam
                                         </button>
                                     <?php endif; ?>
-                                    
+
                                     <button class="button button-small cad-trash-comment" data-comment-id="<?php echo $comment->comment_ID; ?>">
                                         Trash
                                     </button>
@@ -3791,8 +3830,8 @@ function cad_load_post_comments_ajax() {
             <?php endif; ?>
         </tbody>
     </table>
-    <?php
-    
+<?php
+
     $html = ob_get_clean();
     wp_send_json_success(array('html' => $html));
 }
@@ -3801,24 +3840,25 @@ function cad_load_post_comments_ajax() {
  * AJAX handler to toggle comment status
  */
 add_action('wp_ajax_cad_toggle_comment_status', 'cad_ajax_toggle_comment_status');
-function cad_ajax_toggle_comment_status() {
+function cad_ajax_toggle_comment_status()
+{
     check_ajax_referer('cad_comments_accordion_nonce', 'nonce');
-    
-    if (!current_user_can('moderate_comments')) {
+
+    if (!current_user_can('edit_posts')) {
         wp_send_json_error('Insufficient permissions');
     }
-    
+
     $comment_id = intval($_POST['comment_id']);
     $new_status = sanitize_text_field($_POST['status']);
-    
+
     $result = wp_set_comment_status($comment_id, $new_status);
-    
+
     if ($result) {
         // Get updated counts for this post
         $comment = get_comment($comment_id);
         $post_id = $comment->comment_post_ID;
         $counts = cad_get_comment_counts($post_id);
-        
+
         wp_send_json_success(array(
             'message' => 'Comment status updated',
             'counts' => $counts
@@ -3832,20 +3872,21 @@ function cad_ajax_toggle_comment_status() {
  * AJAX handler to trash comment
  */
 add_action('wp_ajax_cad_trash_comment', 'cad_ajax_trash_comment');
-function cad_ajax_trash_comment() {
+function cad_ajax_trash_comment()
+{
     check_ajax_referer('cad_comments_accordion_nonce', 'nonce');
-    
-    if (!current_user_can('moderate_comments')) {
+
+    if (!current_user_can('edit_posts')) {
         wp_send_json_error('Insufficient permissions');
     }
-    
+
     $comment_id = intval($_POST['comment_id']);
     $comment = get_comment($comment_id);
     $post_id = $comment->comment_post_ID;
-    
+
     // Move to trash (not permanent delete)
     $result = wp_trash_comment($comment_id);
-    
+
     if ($result) {
         $counts = cad_get_comment_counts($post_id);
         wp_send_json_success(array(
@@ -3861,20 +3902,21 @@ function cad_ajax_trash_comment() {
  * AJAX handler to restore comment from trash
  */
 add_action('wp_ajax_cad_restore_comment', 'cad_ajax_restore_comment');
-function cad_ajax_restore_comment() {
+function cad_ajax_restore_comment()
+{
     check_ajax_referer('cad_comments_accordion_nonce', 'nonce');
-    
-    if (!current_user_can('moderate_comments')) {
+
+    if (!current_user_can('edit_posts')) {
         wp_send_json_error('Insufficient permissions');
     }
-    
+
     $comment_id = intval($_POST['comment_id']);
     $comment = get_comment($comment_id);
     $post_id = $comment->comment_post_ID;
-    
+
     // Restore from trash
     $result = wp_untrash_comment($comment_id);
-    
+
     if ($result) {
         $counts = cad_get_comment_counts($post_id);
         wp_send_json_success(array(
@@ -3890,20 +3932,21 @@ function cad_ajax_restore_comment() {
  * AJAX handler to delete comment
  */
 add_action('wp_ajax_cad_delete_comment', 'cad_ajax_delete_comment');
-function cad_ajax_delete_comment() {
+function cad_ajax_delete_comment()
+{
     check_ajax_referer('cad_comments_accordion_nonce', 'nonce');
-    
-    if (!current_user_can('moderate_comments')) {
+
+    if (!current_user_can('edit_posts')) {
         wp_send_json_error('Insufficient permissions');
     }
-    
+
     $comment_id = intval($_POST['comment_id']);
     $comment = get_comment($comment_id);
     $post_id = $comment->comment_post_ID;
-    
+
     // Permanent delete
     $result = wp_delete_comment($comment_id, true);
-    
+
     if ($result) {
         $counts = cad_get_comment_counts($post_id);
         wp_send_json_success(array(
@@ -3918,9 +3961,10 @@ function cad_ajax_delete_comment() {
 /**
  * Helper function to get comment counts for a post
  */
-function cad_get_comment_counts($post_id) {
+function cad_get_comment_counts($post_id)
+{
     global $wpdb;
-    
+
     $counts = $wpdb->get_row($wpdb->prepare("
         SELECT 
             COUNT(*) as total,
@@ -3931,7 +3975,7 @@ function cad_get_comment_counts($post_id) {
         FROM {$wpdb->comments}
         WHERE comment_post_ID = %d
     ", $post_id), ARRAY_A);
-    
+
     return array(
         'total' => intval($counts['total']),
         'approved' => intval($counts['approved']),
@@ -3941,7 +3985,21 @@ function cad_get_comment_counts($post_id) {
     );
 }
 
-   // ============================================================================
-   // 47. POST REACTIONS FEATURE
-   // ============================================================================
-   require_once plugin_dir_path(__FILE__) . 'post-reactions.php';
+// ============================================================================
+// 47. POST REACTIONS FEATURE
+// ============================================================================
+require_once plugin_dir_path(__FILE__) . 'post-reactions.php';
+
+// ============================================================================
+// 48. ADVERTISEMENT MANAGEMENT SYSTEM
+// ============================================================================
+
+add_action('admin_menu', function () {
+    remove_menu_page('edit-comments.php');
+}, 999);
+
+// ============================================================================
+// 49. AUTHOR EDIT CONTROL - HIDE QUICK EDIT & CHANGE TO DRAFT ON EDIT
+// ============================================================================
+
+require_once plugin_dir_path(__FILE__) . 'author-edit-control.php';
