@@ -2,10 +2,17 @@
  * CUSTOM ADMIN DASHBOARD STYLES
  * ========================================================================= */
 
+ /* Yoast SEO Field   */
+
+ #wpseo-metabox-root input *{
+    direction: rtl !important;
+    text-align: right !important; 
+ }
+
  /* ACF Feild  */
  #acf-field_6962159109d8f, #acf-field_6962157d09d8e {
-    direction: rtl;
-    text-align: right; 
+    direction: rtl !important;
+    text-align: right !important; 
  }
 
 /* =========================================================================
