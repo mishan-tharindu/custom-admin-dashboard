@@ -1438,69 +1438,94 @@ add_action('save_post', 'my_custom_plugin_set_default_thumbnail');
 // 30. Weather & Date Shortcode [date_weather]
 // ============================================================================
 
-function date_with_live_weather_shortcode()
-{
-    // 1️⃣ Get city by IP
+function date_with_live_weather_shortcode() {
+
+    // 🌍 1. Get city by IP
     $ip_response = wp_remote_get("http://ip-api.com/json/");
-    if (is_wp_error($ip_response)) return "Location unavailable";
+
+    if (is_wp_error($ip_response)) {
+        return "Location unavailable";
+    }
 
     $ip_data = json_decode(wp_remote_retrieve_body($ip_response), true);
-    $city = $ip_data['city'] ?? 'Colombo';
+    $city    = $ip_data['city'] ?? 'Colombo';
 
-    // 2️⃣ Weather API
+    // 🌦 2. Weather API
     $apiKey = "f524f4a3f66b684de434d97cabcd043c";
-    $url = "https://api.openweathermap.org/data/2.5/weather?q=" . urlencode($city) . "&units=metric&appid=" . $apiKey;
+    $url    = "https://api.openweathermap.org/data/2.5/weather?q=" . urlencode($city) . "&units=metric&appid=" . $apiKey;
 
-    $weather_response = wp_remote_get($url);
-    if (is_wp_error($weather_response)) return "ދުވެ ތަޒްކިލް ނުފެނެއެވެ";
+    // Use city-based cache
+    $transient_key = 'wwmt_weather_' . sanitize_title($city);
+    $weather_data  = get_transient($transient_key);
 
-    $weather_data = json_decode(wp_remote_retrieve_body($weather_response), true);
-    if (!isset($weather_data['main']['temp'])) return "ދުވެ ތަޒްކިލް ސްވާލު";
+    if ($weather_data === false) {
 
-    $temp = round($weather_data['main']['temp'], 1) . "°C";
+        $weather_response = wp_remote_get($url);
 
-    // 3️⃣ Date in Dhivehi
+        if (is_wp_error($weather_response)) {
+            return "ދުވެ ތަޒްކިލް ނުފެނެއެވެ";
+        }
+
+        $weather_data = json_decode(wp_remote_retrieve_body($weather_response), true);
+
+        if (!isset($weather_data['main']['temp'])) {
+            return "ދުވެ ތަޒްކިލް ސްވާލު";
+        }
+
+        // Cache for 30 mins
+        set_transient($transient_key, $weather_data, 1800);
+    }
+
+    // Extra safety
+    if (!isset($weather_data['main']['temp'])) {
+        return "Weather unavailable";
+    }
+
+    $temp = round(floatval($weather_data['main']['temp']), 1) . "°C";
+
+    // 📅 3. Dhivehi Date
     $dhivehi_days = [
-        'Monday' => 'ހޯމަ',
-        'Tuesday' => 'ބުދަ',
-        'Wednesday' => 'ބުރާ',
-        'Thursday' => 'ބ્રεหુ',
-        'Friday' => 'ހুކުރު',
-        'Saturday' => 'ސެނާ',
-        'Sunday' => 'އާދިތްތަ'
+        'Monday'    => 'ހޯމަ',
+        'Tuesday'   => 'އަންގާރަ',
+        'Wednesday' => 'ބުދަ',
+        'Thursday'  => 'ބުރާސްފަތި',
+        'Friday'    => 'ހުކުރު',
+        'Saturday'  => 'ހޮނިހިރު',
+        'Sunday'    => 'އާދިއްތަ'
     ];
 
     $dhivehi_months = [
-        'January' => 'ޖެނުވަރީ',
-        'February' => 'ފެބްރުވަރީ',
-        'March' => 'މާރިޗް',
-        'April' => 'އެޕްރީލް',
-        'May' => 'މޭ',
-        'June' => 'ޖޫން',
-        'July' => 'ޖުލައި',
-        'August' => 'އޮގަސްޓް',
-        'September' => 'ސެޕްޓެމްބަރް',
-        'October' => 'އޮކްޓޯބަރް',
-        'November' => 'ނޮވެމްބަރް',
-        'December' => 'ޑިސެމްބަރް'
+        'January'   => 'ޖަނަވަރީ',
+        'February'  => 'ފެބުރުވަރީ',
+        'March'     => 'މާރިޗު',
+        'April'     => 'އެޕްރީލް',
+        'May'       => 'މޭ',
+        'June'      => 'ޖޫން',
+        'July'      => 'ޖުލައި',
+        'August'    => 'އޮގަސްޓް',
+        'September' => 'ސެޕްޓެންބަރު',
+        'October'   => 'އޮކްޓޫބަރު',
+        'November'  => 'ނޮވެންބަރު',
+        'December'  => 'ޑިސެންބަރު'
     ];
 
-    // Get date components
-    $day_name = date("l");
-    $day_num = date("j");
-    $month_name = date("F");
-    $year = date("Y");
+    // WordPress timezone-safe date
+    $day_name   = wp_date("l");
+    $day_num    = wp_date("j");
+    $month_name = wp_date("F");
+    $year       = wp_date("Y");
 
-    $dhivehi_day = $dhivehi_days[$day_name] ?? $day_name;
     $dhivehi_month = $dhivehi_months[$month_name] ?? $month_name;
 
-    // $date = $dhivehi_day . " " . $day_num . " " . $dhivehi_month . " " . $year;
-    $date =  $day_num . " " . $dhivehi_month . " " . $year;
+    // Format: Date + Month + Year
+    $date = $year . " " . $dhivehi_month . " " . $day_num;
 
-    // 4️⃣ Final output
-    return $temp  . " — " . $date;
+    // 🎯 Final output
+    return "<div class='wwmt-weather-date-container'><div class='wwmt-weather-date-date'>{$date}</div> - <div class='wwmt-weather-date-temp'>{$temp}</div></div>";
 }
+
 add_shortcode('date_weather', 'date_with_live_weather_shortcode');
+
 
 // ============================================================================
 // 31. Post Time Elapsed in Post Grid and Enqueue script to inject post time
@@ -1541,13 +1566,13 @@ function enqueue_post_time_script()
         // Function to abbreviate time units
         function abbreviateTime(timeStr) {
             return timeStr
-                .replace(/\b(\d+)\s+years?\b/gi, '$1 yr')
-                .replace(/\b(\d+)\s+months?\b/gi, '$1 mo')
-                .replace(/\b(\d+)\s+weeks?\b/gi, '$1 wk')
-                .replace(/\b(\d+)\s+days?\b/gi, '$1 d')
-                .replace(/\b(\d+)\s+hours?\b/gi, '$1 hr')
-                .replace(/\b(\d+)\s+minutes?\b/gi, '$1 min')
-                .replace(/\b(\d+)\s+seconds?\b/gi, '$1 sec');
+                .replace(/\b(\d+)\s+years?\b/gi, '$1 އަހަރު')
+                .replace(/\b(\d+)\s+months?\b/gi, '$1 މަސް')
+                .replace(/\b(\d+)\s+weeks?\b/gi, '$1 ހަފްތާ')
+                .replace(/\b(\d+)\s+days?\b/gi, '$1 ދުވަސް')
+                .replace(/\b(\d+)\s+hours?\b/gi, '$1 ގަޑި')
+                .replace(/\b(\d+)\s+minutes?\b/gi, '$1 މިނިޓް')
+                .replace(/\b(\d+)\s+seconds?\b/gi, '$1 ދެވަނަ');
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -1612,7 +1637,8 @@ function enqueue_post_time_script()
 // Enqueue external stylesheet
 add_action('wp_enqueue_scripts', 'post_time_enqueue_styles');
 
-function post_time_enqueue_styles() {
+function post_time_enqueue_styles()
+{
     // This looks for a file named 'frontend.css' inside a 'css' folder in your plugin directory
     wp_enqueue_style(
         'custom-post-time-css', // Handle name
@@ -1909,14 +1935,14 @@ add_action('admin_notices', 'author_draft_notice');
 function author_draft_notice()
 {
     global $pagenow, $post;
-    
+
     // Only show on post edit screen
     if ($pagenow !== 'post.php' || !isset($post)) {
         return;
     }
 
     $current_user = wp_get_current_user();
-    
+
     // Only for Authors
     if (!in_array('author', $current_user->roles)) {
         return;
