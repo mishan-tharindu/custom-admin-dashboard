@@ -1438,7 +1438,8 @@ add_action('save_post', 'my_custom_plugin_set_default_thumbnail');
 // 30. Weather & Date Shortcode [date_weather]
 // ============================================================================
 
-function date_with_live_weather_shortcode() {
+function date_with_live_weather_shortcode()
+{
 
     // 🌍 1. Get city by IP
     $ip_response = wp_remote_get("http://ip-api.com/json/");
@@ -4037,3 +4038,163 @@ add_action('admin_menu', function () {
 // ============================================================================
 
 require_once plugin_dir_path(__FILE__) . 'author-edit-control.php';
+
+// ============================================================================
+// 50. NEWS HOMEPAGE LAYOUT MANAGER - DRAG & DROP POST ARRANGEMENT
+// ============================================================================
+
+require_once plugin_dir_path(__FILE__) . 'news-homepage-layout.php';
+
+// ============================================================================
+// FRONTEND ORDERED POSTS HELPER FUNCTION
+// ============================================================================
+
+function nhl_get_ordered_category_posts($category, $limit = 10)
+{
+    return new WP_Query([
+        'category_name'  => $category,
+        'posts_per_page' => $limit,
+        'meta_key'       => 'news_position_' . $category,
+        'orderby'        => 'meta_value_num',
+        'order'          => 'ASC'
+    ]);
+}
+
+// ============================================================================
+// FORCE CATEGORY ARCHIVE & HOMEPAGE TO USE CUSTOM ORDER
+// ============================================================================
+
+add_action('pre_get_posts', function ($query) {
+
+    if (is_admin() || !$query->is_main_query()) return;
+
+    // Homepage
+    if ($query->is_home() || $query->is_front_page()) {
+
+        if ($query->get('category_name')) {
+
+            $cat = $query->get('category_name');
+
+            $query->set('meta_key', 'news_position_' . $cat);
+            $query->set('orderby', 'meta_value_num');
+            $query->set('order', 'ASC');
+        }
+    }
+
+    // Category archive pages
+    if ($query->is_category()) {
+
+        $cat_obj = get_queried_object();
+        if ($cat_obj && isset($cat_obj->slug)) {
+
+            $query->set('meta_key', 'news_position_' . $cat_obj->slug);
+            $query->set('orderby', 'meta_value_num');
+            $query->set('order', 'ASC');
+        }
+    }
+});
+
+// ============================================================================
+// 51.  SHORTCODE TO DISPLAY ORDERED POSTS BY CATEGORY
+// ============================================================================
+add_shortcode('news_home_layout', function () {
+
+    // Featured
+    $featured = get_posts([
+        'category_name' => 'news',
+        'meta_key' => 'news_slot',
+        'meta_value' => 'featured',
+        'numberposts' => 1
+    ]);
+
+    // Tops
+    $tops = get_posts([
+        'category_name' => 'news',
+        'meta_query' => [
+            [
+                'key' => 'news_slot',
+                'value' => ['top_1', 'top_2', 'top_3', 'top_4'],
+                'compare' => 'IN'
+            ]
+        ],
+        'numberposts' => -1
+    ]);
+
+    // Sort by slot order manually
+    usort($tops, function ($a, $b) {
+        $order = ['top_1', 'top_2', 'top_3', 'top_4'];
+        return array_search(get_post_meta($a->ID, 'news_slot', true), $order)
+            - array_search(get_post_meta($b->ID, 'news_slot', true), $order);
+    });
+
+    // Grid
+    $grid = new WP_Query([
+        'category_name' => 'news',
+        'meta_query' => [
+            'relation' => 'OR',
+
+            [
+                'key'     => 'news_slot',
+                'compare' => 'NOT EXISTS'
+            ],
+            [
+                'key'     => 'news_slot',
+                'value'   => '',
+                'compare' => '='
+            ],
+            [
+                'key'     => 'news_slot',
+                'value'   => ['featured', 'top_1', 'top_2', 'top_3', 'top_4'],
+                'compare' => 'NOT IN'
+            ],
+        ],
+        'meta_key' => 'news_grid_position',
+        'orderby'  => [
+            'meta_value_num' => 'ASC',
+            'date'           => 'DESC'
+        ],
+        'posts_per_page' => 8
+    ]);
+
+
+
+    ob_start(); ?>
+
+    <div class="news-layout">
+
+        <div class="news-hero">
+
+            <div class="news-top-grid">
+                <?php foreach ($tops as $p) : ?>
+                    <?= nhl_post_card($p, false); ?>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="news-featured">
+                <?php
+                if (!empty($featured)) {
+                    echo nhl_post_card($featured[0], true);
+                }
+                ?>
+            </div>
+
+        </div>
+
+
+        <!-- GRID -->
+        <div class="news-grid">
+            <?php if ($grid->have_posts()) :
+                while ($grid->have_posts()) : $grid->the_post();
+                    echo nhl_post_card(get_post(), false);
+                endwhile;
+                wp_reset_postdata();
+            endif; ?>
+        </div>
+
+        <button id="news-load-more" data-page="1">Load More</button>
+
+    </div>
+
+<?php
+    return ob_get_clean();
+});

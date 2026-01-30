@@ -1,3 +1,85 @@
+/* News Fontend */
+.news-hero {
+    display: grid;
+    grid-template-columns: 2fr 3fr;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+/* Top 4 on left (2x2) */
+.news-top-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 15px;
+}
+
+/* Featured big on right */
+.news-featured {
+    height: 100%;
+}
+
+.news-featured .news-card {
+    height: 100%;
+}
+
+.news-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-top: 25px;
+}
+
+#news-load-more {
+    display: block;
+    margin: 40px auto 0;
+    padding: 12px 30px;
+    background: purple;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.news-card {
+    border: 2px solid #000;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.news-thumb img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.news-featured .news-thumb img {
+    height: 350px;
+}
+
+@media (max-width: 1024px) {
+    .news-hero {
+        grid-template-columns: 1fr;
+    }
+
+    .news-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .news-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .news-top-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
 /*Weather Date and Post Time Customization Styles */
 .wwmt-weather-date-container {
     display: flex;
