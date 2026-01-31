@@ -9,7 +9,6 @@ if (!defined('ABSPATH')) exit;
 class News_Homepage_Layout
 {
 
-    private $categories = ['news', 'sports', 'weather', 'soft'];
 
     public function __construct()
     {
@@ -19,33 +18,34 @@ class News_Homepage_Layout
 
         add_action('wp_ajax_nhl_save_grid_order', [$this, 'save_grid_order']);
 
-
         add_action('wp_ajax_nhl_save_news_slot', function () {
 
             check_ajax_referer('nhl_nonce', 'nonce');
 
             $post_id = (int) $_POST['post_id'];
             $slot = sanitize_text_field($_POST['slot']);
+            $category = sanitize_text_field($_POST['category']); // 🔥 ADD
 
-            // Clear this slot from ANY other post
+            $slot_key = $category . '_slot';
+
+            // Clear this slot from ANY other post in same category
             $old = get_posts([
-                'category_name' => 'news',
-                'meta_key'      => 'news_slot',
+                'category_name' => $category,
+                'meta_key'      => $slot_key,
                 'meta_value'    => $slot,
                 'numberposts'   => 1
             ]);
 
             if (!empty($old)) {
-                delete_post_meta($old[0]->ID, 'news_slot');
+                delete_post_meta($old[0]->ID, $slot_key);
             }
 
             // Assign new post to slot
-            delete_post_meta($post_id, 'news_slot');
-            update_post_meta($post_id, 'news_slot', $slot);
+            delete_post_meta($post_id, $slot_key);
+            update_post_meta($post_id, $slot_key, $slot);
 
             wp_send_json_success();
         });
-
 
         add_action('wp_ajax_nhl_reset_news_layout', function () {
 
@@ -91,14 +91,17 @@ class News_Homepage_Layout
 
             $post_id = (int) $_POST['post_id'];
 
-            delete_post_meta($post_id, 'news_slot');
+            $category = sanitize_text_field($_POST['category']);
+            $slot_key = $category . '_slot';
+
+            delete_post_meta($post_id, $slot_key);
+
 
             wp_send_json_success();
         });
 
         add_action('wp_ajax_nhl_load_more_news', [$this, 'nhl_load_more_news']);
         add_action('wp_ajax_nopriv_nhl_load_more_news', [$this, 'nhl_load_more_news']);
-
 
         add_action('wp_enqueue_scripts', function () {
 
@@ -114,6 +117,40 @@ class News_Homepage_Layout
             wp_localize_script('nhl-news-frontend', 'nhl_ajax', [
                 'ajax_url' => admin_url('admin-ajax.php')
             ]);
+        });
+
+        add_action('wp_ajax_nhl_reset_category_layout', function () {
+
+            check_ajax_referer('nhl_nonce', 'nonce');
+
+            $category = sanitize_text_field($_POST['category']);
+            $slot_key = $category . '_slot';
+
+            $posts = get_posts([
+                'category_name' => $category,
+                'numberposts'   => -1,
+                'orderby'       => 'date',
+                'order'         => 'DESC'
+            ]);
+
+            foreach ($posts as $p) {
+                delete_post_meta($p->ID, $slot_key);
+            }
+
+            if (!empty($posts)) {
+
+                update_post_meta($posts[0]->ID, $slot_key, 'featured');
+
+                $top_slots = ['top_1', 'top_2', 'top_3', 'top_4'];
+
+                for ($i = 0; $i < 4; $i++) {
+                    if (isset($posts[$i + 1])) {
+                        update_post_meta($posts[$i + 1]->ID, $slot_key, $top_slots[$i]);
+                    }
+                }
+            }
+
+            wp_send_json_success();
         });
     }
 
@@ -162,198 +199,197 @@ class News_Homepage_Layout
     {
         echo '<div class="wrap"><h1>Homepage News Layout</h1>';
 
-        // 🔥 LOAD ALL CATEGORIES DYNAMICALLY
+        // 🔥 Load categories dynamically
         $categories = get_categories([
             'hide_empty' => true,
             'orderby'    => 'name',
             'order'      => 'ASC',
-            'exclude'    => [1], // Exclude Uncategorized (optional)
+            'exclude'    => [1], // Exclude Uncategorized
         ]);
 
-        // =========================
-        // TABS NAVIGATION
-        // =========================
+        /* =====================================================
+                TABS NAV
+        ===================================================== */
         echo '<div class="nhl-tabs">';
-
         $first = true;
+
         foreach ($categories as $cat) {
             $active = $first ? 'active' : '';
-            echo '<button class="nhl-tab ' . esc_attr($active) . '" data-tab="' . esc_attr($cat->slug) . '">
-                ' . esc_html($cat->name) . '
-              </button>';
+            echo '<button class="nhl-tab ' . esc_attr($active) . '" data-tab="' . esc_attr($cat->slug) . '">'
+                . esc_html($cat->name) .
+                '</button>';
             $first = false;
         }
 
         echo '</div>';
         echo '<div class="nhl-tab-contents">';
 
-        // =========================
-        // TAB PANELS
-        // =========================
+        /* =====================================================
+            TAB CONTENTS
+        ===================================================== */
         $first = true;
+
         foreach ($categories as $catObj) {
 
-            $cat = $catObj->slug;
-            $isActive = $first ? 'active' : '';
-            $first = false;
+            $cat        = $catObj->slug;
+            $isActive   = $first ? 'active' : '';
+            $first      = false;
+
+            $slot_key  = $cat . '_slot';
+            $grid_key  = $cat . '_grid_position';
 
             echo "<div class='nhl-tab-content {$isActive}' data-tab='{$cat}'>";
+            echo "<div class='nhl-{$cat}-layout'>";
+            echo "<h2>" . esc_html($catObj->name) . " Layout</h2>";
 
-            // =========================
-            // NEWS CATEGORY - SPECIAL LAYOUT
-            // =========================
-            if ($cat === 'news') {
+            /* =========================
+                    RESET BUTTON
+            ========================= */
+                echo "
+            <div class='nhl-reset-wrap'>
+                <button id='nhl-reset-{$cat}' class='button button-secondary'>
+                    🔄 Reset {$catObj->name} Layout to Default
+                </button>
+            </div>
+            ";
 
-                // Featured
-                $featured = get_posts([
-                    'category_name' => 'news',
-                    'meta_key'      => 'news_slot',
-                    'meta_value'    => 'featured',
+            /* =========================
+                    HERO AREA
+            ========================= */
+            echo "<div class='nhl-hero-admin nhl-{$cat}-hero-admin'>";
+
+            /* ---------- TOP STORIES ---------- */
+                echo "
+            <div class='nhl-top-admin'>
+                <h3>🔵 Top Stories</h3>
+                <div class='nhl-top-slots'>
+            ";
+
+            $top_slots = ['top_1', 'top_2', 'top_3', 'top_4'];
+
+            foreach ($top_slots as $slot) {
+
+                $slot_post = get_posts([
+                    'category_name' => $cat,
+                    'meta_key'      => $slot_key,
+                    'meta_value'    => $slot,
                     'numberposts'   => 1
                 ]);
 
-                echo "<div class='nhl-news-layout'>
-                    <h2>News Layout</h2>
+                echo "<ul class='nhl-drop' data-slot='{$slot}'>";
 
-                    <div class='nhl-reset-wrap'>
-                        <button id='nhl-reset-news' class='button button-secondary'>
-                            🔄 Reset News Layout to Default
-                        </button>
-                    </div>
+                if (!empty($slot_post)) {
+                    $p     = $slot_post[0];
+                    $thumb = get_the_post_thumbnail_url($p->ID, 'thumbnail')
+                        ?: get_template_directory_uri() . '/assets/no-image.jpg';
 
-                    <div class='nhl-news-hero-admin'>";
-
-                // =========================
-                // TOP STORIES
-                // =========================
-                echo "<div class='nhl-top-admin'>
-                    <h3>🔵 Top Stories</h3>
-                    <div class='nhl-top-slots'>";
-
-                $top_slots = ['top_1', 'top_2', 'top_3', 'top_4'];
-
-                foreach ($top_slots as $slot) {
-
-                    $slot_post = get_posts([
-                        'category_name' => 'news',
-                        'meta_key'      => 'news_slot',
-                        'meta_value'    => $slot,
-                        'numberposts'   => 1
-                    ]);
-
-                    echo "<ul class='nhl-drop' data-slot='{$slot}'>";
-
-                    if (!empty($slot_post)) {
-                        $p = $slot_post[0];
-                        $thumb = get_the_post_thumbnail_url($p->ID, 'thumbnail');
-                        $thumb = $thumb ?: get_template_directory_uri() . '/assets/no-image.jpg';
-
-                        echo "<li class='nhl-item' data-id='{$p->ID}'>
-                            <img src='{$thumb}' >
-                            <span class='nhl-title'>" . esc_html($p->post_title) . "</span>
-                            <span class='nhl-remove'>✖</span>
-                          </li>";
-                    } else {
-                        echo "<li class='nhl-slot-placeholder'>" . esc_html(strtoupper(str_replace('_', ' ', $slot))) . "</li>";
-                    }
-
-                    echo "</ul>";
-                }
-
-                echo "</div></div>"; // top admin
-
-                // =========================
-                // FEATURED
-                // =========================
-                echo "<div class='nhl-featured-admin'>
-                    <h3>🔴 Featured</h3>
-                    <ul class='nhl-featured-slot nhl-drop' data-slot='featured'>";
-
-                if (!empty($featured)) {
-                    $p = $featured[0];
-                    $thumb = get_the_post_thumbnail_url($p->ID, 'thumbnail');
-                    $thumb = $thumb ?: get_template_directory_uri() . '/assets/no-image.jpg';
-
-                    echo "<li class='nhl-item' data-id='{$p->ID}'>
-                        <img src='{$thumb}' >
-                        <span class='nhl-title'>" . esc_html($p->post_title) . "</span>
-                        <span class='nhl-remove'>✖</span>
-                      </li>";
+                    echo "
+                <li class='nhl-item' data-id='{$p->ID}'>
+                    <img src='{$thumb}'>
+                    <span class='nhl-title'>" . esc_html($p->post_title) . "</span>
+                    <span class='nhl-remove'>✖</span>
+                </li>
+                ";
                 } else {
-                    echo "<li class='nhl-slot-placeholder'>FEATURED</li>";
-                }
-
-                echo "</ul></div>"; // featured
-
-                echo "</div>"; // hero admin
-
-                // =========================
-                // NEWS GRID
-                // =========================
-                $grid = get_posts([
-                    'category_name' => 'news',
-                    'meta_query' => [
-                        'relation' => 'OR',
-                        ['key' => 'news_slot', 'compare' => 'NOT EXISTS'],
-                        ['key' => 'news_slot', 'value' => ['featured', 'top_1', 'top_2', 'top_3', 'top_4'], 'compare' => 'NOT IN'],
-                    ],
-                    'meta_key'   => 'news_grid_position',
-                    'orderby'    => ['meta_value_num' => 'ASC', 'date' => 'DESC'],
-                    'numberposts' => -1
-                ]);
-
-                echo "<h3>🟦 Grid</h3>
-                  <ul class='nhl-card-grid nhl-sortable-grid' data-cat='news'>";
-
-                foreach ($grid as $post) {
-                    $thumb = get_the_post_thumbnail_url($post->ID, 'medium');
-                    $thumb = $thumb ?: get_template_directory_uri() . '/assets/no-image.jpg';
-
-                    echo "<li class='nhl-item nhl-card-item' data-id='{$post->ID}'>
-                        <div class='nhl-card-thumb'>
-                            <img src='{$thumb}' alt=''>
-                        </div>
-                        <div class='nhl-card-title'>" . esc_html($post->post_title) . "</div>
-                      </li>";
-                }
-
-                echo "</ul></div>"; // news layout
-            }
-
-            // =========================
-            // OTHER CATEGORIES
-            // =========================
-            else {
-
-                $posts = get_posts([
-                    'category_name' => $cat,
-                    'numberposts'   => -1,
-                    'meta_key'      => 'news_position_' . $cat,
-                    'orderby'       => ['meta_value_num' => 'ASC', 'date' => 'DESC'],
-                ]);
-
-                echo "<h2>" . esc_html($catObj->name) . "</h2>";
-                echo "<ul class='nhl-card-grid nhl-sortable' data-cat='{$cat}'>";
-
-                foreach ($posts as $post) {
-                    $thumb = get_the_post_thumbnail_url($post->ID, 'medium');
-                    $thumb = $thumb ?: get_template_directory_uri() . '/assets/no-image.jpg';
-
-                    echo "<li id='post-{$post->ID}' class='nhl-card-item'>
-                        <div class='nhl-card-thumb'>
-                            <img src='{$thumb}' alt=''>
-                        </div>
-                        <div class='nhl-card-title'>" . esc_html($post->post_title) . "</div>
-                      </li>";
+                    echo "<li class='nhl-slot-placeholder'>" .
+                        esc_html(strtoupper(str_replace('_', ' ', $slot))) .
+                        "</li>";
                 }
 
                 echo "</ul>";
             }
 
+            echo "</div></div>";
+
+            /* ---------- FEATURED ---------- */
+            $featured = get_posts([
+                'category_name' => $cat,
+                'meta_key'      => $slot_key,
+                'meta_value'    => 'featured',
+                'numberposts'   => 1
+            ]);
+
+                echo "
+            <div class='nhl-featured-admin'>
+                <h3>🔴 Featured</h3>
+                <ul class='nhl-featured-slot nhl-drop' data-slot='featured'>
+            ";
+
+            if (!empty($featured)) {
+                $p     = $featured[0];
+                $thumb = get_the_post_thumbnail_url($p->ID, 'thumbnail')
+                    ?: get_template_directory_uri() . '/assets/no-image.jpg';
+
+                echo "
+            <li class='nhl-item' data-id='{$p->ID}'>
+                <img src='{$thumb}'>
+                <span class='nhl-title'>" . esc_html($p->post_title) . "</span>
+                <span class='nhl-remove'>✖</span>
+            </li>
+            ";
+            } else {
+                echo "<li class='nhl-slot-placeholder'>FEATURED</li>";
+            }
+
+            echo "</ul></div>";
+            echo "</div>"; // hero admin
+
+            /* =========================
+                    GRID
+             ========================= */
+            $grid = get_posts([
+                'category_name' => $cat,
+                'meta_query' => [
+                    'relation' => 'OR',
+                    [
+                        'key'     => $slot_key,
+                        'compare' => 'NOT EXISTS'
+                    ],
+                    [
+                        'key'     => $slot_key,
+                        'value'   => ['featured', 'top_1', 'top_2', 'top_3', 'top_4'],
+                        'compare' => 'NOT IN'
+                    ],
+                ],
+                'numberposts' => -1
+            ]);
+
+            // Sort by grid position if exists
+            usort($grid, function ($a, $b) use ($grid_key) {
+                $aPos = get_post_meta($a->ID, $grid_key, true);
+                $bPos = get_post_meta($b->ID, $grid_key, true);
+
+                if ($aPos !== '' && $bPos !== '') return (int)$aPos - (int)$bPos;
+                if ($aPos !== '') return -1;
+                if ($bPos !== '') return 1;
+                return 0;
+            });
+
+            echo "
+                <h3>🟦 Grid</h3>
+                <ul class='nhl-card-grid nhl-sortable-grid' data-cat='{$cat}'>
+                ";
+
+            foreach ($grid as $post) {
+                $thumb = get_the_post_thumbnail_url($post->ID, 'medium')
+                    ?: get_template_directory_uri() . '/assets/no-image.jpg';
+
+                echo "
+                <li class='nhl-item nhl-card-item' data-id='{$post->ID}'>
+                    <div class='nhl-card-thumb'>
+                        <img src='{$thumb}' alt=''>
+                    </div>
+                    <div class='nhl-card-title'>" . esc_html($post->post_title) . "</div>
+                </li>
+                ";
+            }
+
+            echo "</ul>";
+            echo "</div>"; // layout
             echo "</div>"; // tab content
         }
 
-        echo '</div></div>'; // tab contents + wrap
+        echo '</div></div>'; // contents + wrap
     }
 
 
@@ -368,7 +404,7 @@ class News_Homepage_Layout
 
         if (!empty($order)) {
             foreach ($order as $position => $post_id) {
-                update_post_meta((int)$post_id, 'news_position_' . $category, $position);
+                update_post_meta((int)$post_id, $category . '_grid_position', $position);
             }
         }
 
@@ -383,10 +419,16 @@ class News_Homepage_Layout
         $query = new WP_Query([
             'category_name' => 'news',
             'meta_query' => [
+                'relation' => 'OR',
                 [
-                    'key' => 'news_slot',
+                    'key'     => 'news_slot',
                     'compare' => 'NOT EXISTS'
-                ]
+                ],
+                [
+                    'key'     => 'news_slot',
+                    'value'   => ['featured', 'top_1', 'top_2', 'top_3', 'top_4'],
+                    'compare' => 'NOT IN'
+                ],
             ],
             'posts_per_page' => 8,
             'paged' => $page + 1
@@ -407,11 +449,14 @@ class News_Homepage_Layout
     {
         check_ajax_referer('nhl_nonce', 'nonce');
 
-        $order = isset($_POST['order']) ? $_POST['order'] : [];
+        $order = $_POST['order'] ?? [];
+        $category = sanitize_text_field($_POST['category']); // 🔥 ADD
+
+        $grid_key = $category . '_grid_position';
 
         if (!empty($order)) {
             foreach ($order as $position => $post_id) {
-                update_post_meta((int)$post_id, 'news_grid_position', $position);
+                update_post_meta((int)$post_id, $grid_key, $position);
             }
         }
 

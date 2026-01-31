@@ -5,38 +5,39 @@ jQuery(function ($) {
     ========================================= */
 
     function normalizeToGrid($item) {
-
         let imgSrc = $item.find('img').attr('src') || '';
         let title = $item.find('.nhl-title').text() || $item.find('.nhl-card-title').text() || '';
 
-        let gridHtml = `
+        return $(`
             <li class="nhl-item nhl-card-item" data-id="${$item.data('id')}">
                 <div class="nhl-card-thumb">
                     <img src="${imgSrc}" alt="">
                 </div>
-                <div class="nhl-card-title">
-                    ${title}
-                </div>
+                <div class="nhl-card-title">${title}</div>
             </li>
-        `;
-
-        return $(gridHtml);
+        `);
     }
 
     function normalizeToHero($item) {
-
         let imgSrc = $item.find('img').attr('src') || '';
         let title = $item.find('.nhl-card-title').text() || $item.find('.nhl-title').text() || '';
 
-        let heroHtml = `
+        return $(`
             <li class="nhl-item" data-id="${$item.data('id')}">
                 <img src="${imgSrc}">
                 <span class="nhl-title">${title}</span>
                 <span class="nhl-remove" title="Remove">✖</span>
             </li>
-        `;
+        `);
+    }
 
-        return $(heroHtml);
+    function getActiveCategory() {
+        return $('.nhl-tab.active').data('tab');
+    }
+
+    function getActiveGrid() {
+        let cat = getActiveCategory();
+        return $('.nhl-tab-content[data-tab="' + cat + '"] .nhl-sortable-grid');
     }
 
     /* =========================================
@@ -83,33 +84,33 @@ jQuery(function ($) {
     });
 
     /* =========================================
-       NEWS GRID — SORTABLE
+       GRID — SORTABLE (PER CATEGORY)
     ========================================= */
 
     $('.nhl-sortable-grid').sortable({
         placeholder: 'nhl-placeholder',
         items: '> .nhl-item',
         tolerance: 'pointer',
-        revert: true,
-        helper: 'clone',
 
         update: function () {
+            let category = getActiveCategory();
             let order = [];
 
-            $('.nhl-sortable-grid .nhl-item').each(function () {
+            getActiveGrid().find('.nhl-item').each(function () {
                 order.push($(this).data('id'));
             });
 
             $.post(nhl_ajax.ajax_url, {
                 action: 'nhl_save_grid_order',
                 order: order,
+                category: category,
                 nonce: nhl_ajax.nonce
             });
         }
     });
 
     /* =========================================
-       SLOTS — GRID → HERO (ROCK SOLID SWAP)
+       SLOTS — GRID → HERO (PER CATEGORY)
     ========================================= */
 
     $('.nhl-drop').droppable({
@@ -118,63 +119,54 @@ jQuery(function ($) {
 
         drop: function (event, ui) {
 
+            let category = getActiveCategory();
             let postId = ui.draggable.data('id');
             let slot = $(this).data('slot');
 
             let $slot = $(this);
+            let $activeGrid = getActiveGrid();
 
-            // ALWAYS get existing hero item FIRST
             let $oldHeroItem = $slot.children('.nhl-item').first();
-
-            // Build new HERO item from GRID
             let $newHeroItem = normalizeToHero(ui.draggable);
 
-            /* =========================
-               MOVE OLD HERO → GRID
-            ========================= */
+            // Move old hero back to ACTIVE grid
             if ($oldHeroItem.length) {
                 let $oldGridItem = normalizeToGrid($oldHeroItem);
-                $('.nhl-sortable-grid').prepend($oldGridItem);
+                $activeGrid.prepend($oldGridItem);
             }
 
-            /* =========================
-               REPLACE SLOT
-            ========================= */
             $slot.empty().append($newHeroItem);
-
-            /* =========================
-               REMOVE ORIGINAL GRID ITEM
-            ========================= */
             ui.draggable.remove();
 
-            /* =========================
-               SAVE SLOT
-            ========================= */
+            // SAVE SLOT (DYNAMIC)
             $.post(nhl_ajax.ajax_url, {
                 action: 'nhl_save_news_slot',
                 post_id: postId,
                 slot: slot,
+                category: category,
                 nonce: nhl_ajax.nonce
             });
         }
     });
 
     /* =========================================
-       REMOVE FROM HERO → GRID
+       REMOVE FROM HERO → GRID (PER CATEGORY)
     ========================================= */
 
     $(document).on('click', '.nhl-remove', function (e) {
         e.stopPropagation();
 
+        let category = getActiveCategory();
         let $heroItem = $(this).closest('.nhl-item');
         let postId = $heroItem.data('id');
 
         let $gridItem = normalizeToGrid($heroItem);
-        $('.nhl-sortable-grid').prepend($gridItem);
+        getActiveGrid().prepend($gridItem);
 
         $.post(nhl_ajax.ajax_url, {
             action: 'nhl_clear_news_slot',
             post_id: postId,
+            category: category,
             nonce: nhl_ajax.nonce
         });
 
@@ -182,20 +174,23 @@ jQuery(function ($) {
     });
 
     /* =========================================
-       RESET NEWS LAYOUT
+       RESET — ALL CATEGORIES
     ========================================= */
 
-    $(document).on('click', '#nhl-reset-news', function (e) {
+    $(document).on('click', '[id^="nhl-reset-"]', function (e) {
         e.preventDefault();
 
-        if (!confirm('Reset News layout to default (newest first)?')) return;
+        let category = getActiveCategory();
+
+        if (!confirm('Reset ' + category + ' layout to default (newest first)?')) return;
 
         $.post(nhl_ajax.ajax_url, {
-            action: 'nhl_reset_news_layout',
+            action: 'nhl_reset_category_layout',
+            category: category,
             nonce: nhl_ajax.nonce
         }, function (response) {
             if (response.success) {
-                alert('News layout reset to default!');
+                alert(category + ' layout reset!');
                 location.reload();
             } else {
                 alert('Reset failed.');

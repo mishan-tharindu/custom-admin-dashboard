@@ -30,10 +30,10 @@
 
 
 /* =========================================================
-   NEWS HERO ADMIN (TOP + FEATURED)
+   HERO ADMIN — ALL CATEGORIES (UNIVERSAL)
 ========================================================= */
 
-.nhl-news-hero-admin {
+[class$="-hero-admin"] {
     display: grid;
     grid-template-columns: 2fr 3fr;
     gap: 15px;
@@ -65,6 +65,7 @@
     justify-content: center;
     background: #0aa3c217;
     border: 2px dashed #000;
+    min-height: 140px;
 }
 
 /* RIGHT: FEATURED */
@@ -84,11 +85,12 @@
     justify-content: center;
     background: #e41b1b17;
     border: 2px dashed #000;
+    min-height: 140px;
 }
 
 
-/* HERO ITEM CARD */
-.nhl-news-hero-admin .nhl-item {
+/* HERO ITEM CARD — ALL */
+[class$="-hero-admin"] .nhl-item {
     width: 100%;
     height: 100%;
     display: flex;
@@ -99,10 +101,11 @@
     background: transparent;
     border: none;
     padding: 10px;
+    box-sizing: border-box;
 }
 
-/* HERO IMAGES */
-.nhl-news-hero-admin .nhl-item img {
+/* HERO IMAGES — ALL */
+[class$="-hero-admin"] .nhl-item img {
     max-width: 100%;
     max-height: 350px;
     width: auto;
@@ -111,8 +114,8 @@
     margin-bottom: 10px;
 }
 
-.nhl-news-hero-admin .nhl-title {
-
+/* HERO TITLES — ALL */
+[class$="-hero-admin"] .nhl-title {
     font-size: 14px;
     font-weight: bold;
     color: #000;
@@ -121,10 +124,10 @@
 
 
 /* =========================================================
-   GRID ADMIN (NEWS GREEN GRID)
+   GRID ADMIN (MAIN GREEN GRID — ALL CATEGORIES)
 ========================================================= */
 
-.nhl-sortable-grid.nhl-card-grid {
+.nhl-sortable-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 12px;
@@ -161,7 +164,7 @@
 
 .nhl-card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 12px;
 }
 
@@ -225,13 +228,8 @@
 
 
 /* =========================================================
-   MISC
+   PLACEHOLDER + DRAG FEEDBACK
 ========================================================= */
-
-.nhl-reset-wrap {
-    text-align: right;
-    margin: 10px 0 0px;
-}
 
 .nhl-slot-placeholder {
     width: 100%;
@@ -242,4 +240,47 @@
     justify-content: center;
     font-weight: bold;
     background: #f5f5f5;
+}
+
+.nhl-placeholder {
+    background: #2271b1 !important;
+    border: 2px dashed #000 !important;
+    min-height: 80px;
+    opacity: 0.3;
+}
+
+.nhl-drop-hover {
+    background: #2271b130 !important;
+    border-color: #2271b1 !important;
+}
+
+
+/* =========================================================
+   RESET BUTTON
+========================================================= */
+
+.nhl-reset-wrap {
+    text-align: right;
+    margin: 10px 0 0px;
+}
+
+
+/* =========================================================
+   RESPONSIVE (ADMIN SAFETY)
+========================================================= */
+
+@media (max-width: 1200px) {
+    .nhl-sortable-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
+    .nhl-sortable-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    [class$="-hero-admin"] {
+        grid-template-columns: 1fr;
+    }
 }
