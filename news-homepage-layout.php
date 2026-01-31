@@ -245,7 +245,7 @@ class News_Homepage_Layout
             /* =========================
                     RESET BUTTON
             ========================= */
-                echo "
+            echo "
             <div class='nhl-reset-wrap'>
                 <button id='nhl-reset-{$cat}' class='button button-secondary'>
                     🔄 Reset {$catObj->name} Layout to Default
@@ -259,7 +259,7 @@ class News_Homepage_Layout
             echo "<div class='nhl-hero-admin nhl-{$cat}-hero-admin'>";
 
             /* ---------- TOP STORIES ---------- */
-                echo "
+            echo "
             <div class='nhl-top-admin'>
                 <h3>🔵 Top Stories</h3>
                 <div class='nhl-top-slots'>
@@ -309,7 +309,7 @@ class News_Homepage_Layout
                 'numberposts'   => 1
             ]);
 
-                echo "
+            echo "
             <div class='nhl-featured-admin'>
                 <h3>🔴 Featured</h3>
                 <ul class='nhl-featured-slot nhl-drop' data-slot='featured'>
@@ -467,10 +467,48 @@ class News_Homepage_Layout
 
 new News_Homepage_Layout();
 
-function nhl_time_elapsed($post_id)
-{
-    return human_time_diff(get_the_time('U', $post_id), current_time('timestamp')) . ' ago';
+// ============================================================================
+// TIME ELAPSED — SHORT DHIVEHI FORMAT (NO "AGO")
+// ============================================================================
+
+if (!function_exists('nhl_time_elapsed_dv')) {
+    function nhl_time_elapsed_dv($post_id)
+    {
+        if (!$post_id) return '';
+
+        $post_time = get_post_time('U', true, $post_id);
+        $now       = current_time('timestamp');
+
+        if (!$post_time || $post_time > $now) {
+            return '';
+        }
+
+        $diff = $now - $post_time;
+
+        // Seconds (optional – you can remove if not needed)
+        if ($diff < 60) {
+            return $diff . ' މިނިޓް';
+        }
+
+        $units = [
+            31536000 => 'އަހަރު', // year
+            2592000  => 'މަސް',   // month
+            86400    => 'ދުވަސް', // day
+            3600     => 'ގަޑި',   // hour
+            60       => 'މިނިޓް', // minute
+        ];
+
+        foreach ($units as $seconds => $label) {
+            if ($diff >= $seconds) {
+                return floor($diff / $seconds) . ' ' . $label;
+            }
+        }
+
+        return '0 މިނިޓް';
+    }
 }
+
+
 
 function nhl_post_card($post, $is_featured = false)
 {
@@ -478,7 +516,7 @@ function nhl_post_card($post, $is_featured = false)
     $thumb = $thumb ?: get_template_directory_uri() . '/assets/no-image.jpg';
 
     $comments = get_comments_number($post->ID);
-    $time = nhl_time_elapsed($post->ID);
+    $time = nhl_time_elapsed_dv($post->ID); // ← FIXED: Changed from nhl_time_elapsed to nhl_time_elapsed_dv
     $excerpt = wp_trim_words(strip_tags($post->post_content), 25);
 
     ob_start(); ?>

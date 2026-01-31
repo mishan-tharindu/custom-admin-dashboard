@@ -488,7 +488,7 @@ function custom_post_image_count_shortcode($atts)
 add_shortcode('post_image_count', 'custom_post_image_count_shortcode');
 
 // ============================================================================
-// 12. POST TIME ELAPSED FUNCTION - CLEAN VERSION
+// 12. POST TIME ELAPSED FUNCTION - Short Code CLEAN VERSION
 // ============================================================================
 /**
  * Calculate and display time elapsed since post was published.
@@ -1560,79 +1560,79 @@ function enqueue_post_time_script()
     }
 
     wp_reset_postdata();
-?>
-    <script>
-        var postTimesData = <?php echo json_encode($post_times); ?>;
+    ?>
+        <script>
+            var postTimesData = <?php echo json_encode($post_times); ?>;
 
-        // Function to abbreviate time units
-        function abbreviateTime(timeStr) {
-            return timeStr
-                .replace(/\b(\d+)\s+years?\b/gi, '$1 އަހަރު')
-                .replace(/\b(\d+)\s+months?\b/gi, '$1 މަސް')
-                .replace(/\b(\d+)\s+weeks?\b/gi, '$1 ހަފްތާ')
-                .replace(/\b(\d+)\s+days?\b/gi, '$1 ދުވަސް')
-                .replace(/\b(\d+)\s+hours?\b/gi, '$1 ގަޑި')
-                .replace(/\b(\d+)\s+minutes?\b/gi, '$1 މިނިޓް')
-                .replace(/\b(\d+)\s+seconds?\b/gi, '$1 ދެވަނަ');
-        }
+            // Function to abbreviate time units
+            function abbreviateTime(timeStr) {
+                return timeStr
+                    .replace(/\b(\d+)\s+years?\b/gi, '$1 އަހަރު')
+                    .replace(/\b(\d+)\s+months?\b/gi, '$1 މަސް')
+                    .replace(/\b(\d+)\s+weeks?\b/gi, '$1 ހަފްތާ')
+                    .replace(/\b(\d+)\s+days?\b/gi, '$1 ދުވަސް')
+                    .replace(/\b(\d+)\s+hours?\b/gi, '$1 ގަޑި')
+                    .replace(/\b(\d+)\s+minutes?\b/gi, '$1 މިނިޓް')
+                    .replace(/\b(\d+)\s+seconds?\b/gi, '$1 ދެވަނަ');
+            }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            var postTitles = document.querySelectorAll('.fl-post-grid-title');
-            var postComments = document.querySelectorAll('.fl-post-feed-comments');
+            document.addEventListener('DOMContentLoaded', function() {
+                var postTitles = document.querySelectorAll('.fl-post-grid-title');
+                var postComments = document.querySelectorAll('.fl-post-feed-comments');
 
-            postComments.forEach(function(comment) {
-                var postLink = comment.querySelector('a');
+                postComments.forEach(function(comment) {
+                    var postLink = comment.querySelector('a');
 
-                if (postLink) {
-                    // 1. Get the Post ID
-                    var postGridPost = comment.closest('.fl-post-grid-post');
+                    if (postLink) {
+                        // 1. Get the Post ID
+                        var postGridPost = comment.closest('.fl-post-grid-post');
 
-                    if (postGridPost) {
-                        var classList = postGridPost.getAttribute('class');
-                        var match = classList.match(/post-(\d+)/);
-                        var postId = match ? match[1] : null;
+                        if (postGridPost) {
+                            var classList = postGridPost.getAttribute('class');
+                            var match = classList.match(/post-(\d+)/);
+                            var postId = match ? match[1] : null;
 
-                        if (postId && postTimesData[postId]) {
-                            var postGridText = postGridPost.querySelector('.fl-post-grid-text');
+                            if (postId && postTimesData[postId]) {
+                                var postGridText = postGridPost.querySelector('.fl-post-grid-text');
 
-                            // We target the EXISTING date class (.fl-post-grid-date)
-                            var timeElapsedEl = postGridText.querySelector('.fl-post-grid-meta .fl-post-grid-date');
+                                // We target the EXISTING date class (.fl-post-grid-date)
+                                var timeElapsedEl = postGridText.querySelector('.fl-post-grid-meta .fl-post-grid-date');
 
-                            // Fallback: If not in meta, try searching generally in text area
-                            if (!timeElapsedEl) {
-                                timeElapsedEl = postGridText.querySelector('.fl-post-grid-date');
-                            }
+                                // Fallback: If not in meta, try searching generally in text area
+                                if (!timeElapsedEl) {
+                                    timeElapsedEl = postGridText.querySelector('.fl-post-grid-date');
+                                }
 
-                            // Get the original date text (e.g., "Jan 4, 2026") to show in parentheses
-                            var originalDate = timeElapsedEl ? timeElapsedEl.textContent.trim() : '';
+                                // Get the original date text (e.g., "Jan 4, 2026") to show in parentheses
+                                var originalDate = timeElapsedEl ? timeElapsedEl.textContent.trim() : '';
 
-                            // Abbreviate the time string
-                            var abbreviatedTime = abbreviateTime(postTimesData[postId]);
+                                // Abbreviate the time string
+                                var abbreviatedTime = abbreviateTime(postTimesData[postId]);
 
-                            // Construct the new HTML
-                            // Result: Posted: 2 hr ago (Jan 4, 2026)
-                            var dateSuffix = originalDate ? ' (' + originalDate + ')' : '';
+                                // Construct the new HTML
+                                // Result: Posted: 2 hr ago (Jan 4, 2026)
+                                var dateSuffix = originalDate ? ' (' + originalDate + ')' : '';
 
-                            // Create time elapsed HTML with clock icon
-                            var timeHtml = '<span class="fl-post-time-elapsed">' +
-                                '<i class="far fa-clock"></i> ' +
-                                abbreviatedTime +
-                                '</span>';
+                                // Create time elapsed HTML with clock icon
+                                var timeHtml = '<span class="fl-post-time-elapsed">' +
+                                    '<i class="far fa-clock"></i> ' +
+                                    abbreviatedTime +
+                                    '</span>';
 
-                            // Insert the time HTML after the comment element
-                            comment.insertAdjacentHTML('afterend', timeHtml);
+                                // Insert the time HTML after the comment element
+                                comment.insertAdjacentHTML('afterend', timeHtml);
 
-                            // Optional: Hide the original date element to avoid duplicates
-                            if (timeElapsedEl) {
-                                timeElapsedEl.style.display = 'none';
+                                // Optional: Hide the original date element to avoid duplicates
+                                if (timeElapsedEl) {
+                                    timeElapsedEl.style.display = 'none';
+                                }
                             }
                         }
                     }
-                }
+                });
             });
-        });
-    </script>
-<?php
+        </script>
+    <?php
 }
 
 // Enqueue external stylesheet
@@ -4095,106 +4095,131 @@ add_action('pre_get_posts', function ($query) {
 });
 
 // ============================================================================
-// 51.  SHORTCODE TO DISPLAY ORDERED POSTS BY CATEGORY
+// 51. SHORTCODE — DISPLAY ORDERED POSTS BY CATEGORY (DYNAMIC)
+// Usage: [news_home_layout category="news"]
 // ============================================================================
-add_shortcode('news_home_layout', function () {
 
-    // Featured
+add_shortcode('news_home_layout', function ($atts) {
+
+    $atts = shortcode_atts([
+        'category' => 'news', // default
+        'posts'    => 8
+    ], $atts);
+
+    $category = sanitize_title($atts['category']);
+    $slot_key = $category . '_slot';
+    $grid_key = $category . '_grid_position';
+
+    /* =========================
+       FEATURED
+    ========================= */
     $featured = get_posts([
-        'category_name' => 'news',
-        'meta_key' => 'news_slot',
-        'meta_value' => 'featured',
-        'numberposts' => 1
+        'category_name' => $category,
+        'meta_key'      => $slot_key,
+        'meta_value'    => 'featured',
+        'numberposts'   => 1
     ]);
 
-    // Tops
+    /* =========================
+       TOP STORIES
+    ========================= */
     $tops = get_posts([
-        'category_name' => 'news',
+        'category_name' => $category,
         'meta_query' => [
             [
-                'key' => 'news_slot',
-                'value' => ['top_1', 'top_2', 'top_3', 'top_4'],
+                'key'     => $slot_key,
+                'value'   => ['top_1', 'top_2', 'top_3', 'top_4'],
                 'compare' => 'IN'
             ]
         ],
         'numberposts' => -1
     ]);
 
-    // Sort by slot order manually
-    usort($tops, function ($a, $b) {
+    // Sort tops by slot order
+    usort($tops, function ($a, $b) use ($slot_key) {
         $order = ['top_1', 'top_2', 'top_3', 'top_4'];
-        return array_search(get_post_meta($a->ID, 'news_slot', true), $order)
-            - array_search(get_post_meta($b->ID, 'news_slot', true), $order);
+        return array_search(get_post_meta($a->ID, $slot_key, true), $order)
+            - array_search(get_post_meta($b->ID, $slot_key, true), $order);
     });
 
-    // Grid
+    /* =========================
+       GRID
+    ========================= */
     $grid = new WP_Query([
-        'category_name' => 'news',
+        'category_name' => $category,
         'meta_query' => [
             'relation' => 'OR',
 
+            // No slot
             [
-                'key'     => 'news_slot',
+                'key'     => $slot_key,
                 'compare' => 'NOT EXISTS'
             ],
+
+            // Slot exists but not hero
             [
-                'key'     => 'news_slot',
-                'value'   => '',
-                'compare' => '='
-            ],
-            [
-                'key'     => 'news_slot',
+                'key'     => $slot_key,
                 'value'   => ['featured', 'top_1', 'top_2', 'top_3', 'top_4'],
                 'compare' => 'NOT IN'
             ],
         ],
-        'meta_key' => 'news_grid_position',
+        'meta_key' => $grid_key,
         'orderby'  => [
             'meta_value_num' => 'ASC',
             'date'           => 'DESC'
         ],
-        'posts_per_page' => 8
+        'posts_per_page' => (int) $atts['posts']
     ]);
 
-
-
+    /* =========================
+       OUTPUT
+    ========================= */
     ob_start(); ?>
 
-    <div class="news-layout">
+    <div class="news-layout" data-category="<?= esc_attr($category); ?>">
 
         <div class="news-hero">
 
+            <!-- TOP STORIES -->
             <div class="news-top-grid">
                 <?php foreach ($tops as $p) : ?>
                     <?= nhl_post_card($p, false); ?>
                 <?php endforeach; ?>
             </div>
 
+            <!-- FEATURED -->
             <div class="news-featured">
-                <?php
-                if (!empty($featured)) {
+                <?php if (!empty($featured)) {
                     echo nhl_post_card($featured[0], true);
-                }
-                ?>
+                } ?>
             </div>
 
         </div>
 
-
         <!-- GRID -->
         <div class="news-grid">
-            <?php if ($grid->have_posts()) :
+            <?php
+            if ($grid->have_posts()) :
                 while ($grid->have_posts()) : $grid->the_post();
                     echo nhl_post_card(get_post(), false);
                 endwhile;
                 wp_reset_postdata();
-            endif; ?>
+            endif;
+            ?>
         </div>
 
-        <button id="news-load-more" data-page="1">Load More</button>
+        <button
+            class="news-load-more"
+            data-category="<?= esc_attr($category); ?>"
+            data-page="1">
+            Load More
+        </button>
 
     </div>
 
-<?php
+    <?php
     return ob_get_clean();
 });
+
+
+
