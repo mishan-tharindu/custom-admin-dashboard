@@ -4221,5 +4221,10 @@ add_shortcode('news_home_layout', function ($atts) {
     return ob_get_clean();
 });
 
+// ============================================================================
+// 52. EVENT MEDIA MANAGER PLUGIN INTEGRATION
+require_once plugin_dir_path(__FILE__) . 'event-media-manager/event-media-manager.php';
+// ============================================================================
+
 
 
