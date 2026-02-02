@@ -389,7 +389,7 @@ function my_custom_plugin_menu()
 {
     add_menu_page(
         'My Plugin Settings',
-        'Custom Plugin',
+        'Custom Settings',
         'manage_options',
         'my-plugin-slug',
         'my_plugin_settings_page',
@@ -1560,79 +1560,79 @@ function enqueue_post_time_script()
     }
 
     wp_reset_postdata();
-    ?>
-        <script>
-            var postTimesData = <?php echo json_encode($post_times); ?>;
+?>
+    <script>
+        var postTimesData = <?php echo json_encode($post_times); ?>;
 
-            // Function to abbreviate time units
-            function abbreviateTime(timeStr) {
-                return timeStr
-                    .replace(/\b(\d+)\s+years?\b/gi, '$1 އަހަރު')
-                    .replace(/\b(\d+)\s+months?\b/gi, '$1 މަސް')
-                    .replace(/\b(\d+)\s+weeks?\b/gi, '$1 ހަފްތާ')
-                    .replace(/\b(\d+)\s+days?\b/gi, '$1 ދުވަސް')
-                    .replace(/\b(\d+)\s+hours?\b/gi, '$1 ގަޑި')
-                    .replace(/\b(\d+)\s+minutes?\b/gi, '$1 މިނިޓް')
-                    .replace(/\b(\d+)\s+seconds?\b/gi, '$1 ދެވަނަ');
-            }
+        // Function to abbreviate time units
+        function abbreviateTime(timeStr) {
+            return timeStr
+                .replace(/\b(\d+)\s+years?\b/gi, '$1 އަހަރު')
+                .replace(/\b(\d+)\s+months?\b/gi, '$1 މަސް')
+                .replace(/\b(\d+)\s+weeks?\b/gi, '$1 ހަފްތާ')
+                .replace(/\b(\d+)\s+days?\b/gi, '$1 ދުވަސް')
+                .replace(/\b(\d+)\s+hours?\b/gi, '$1 ގަޑި')
+                .replace(/\b(\d+)\s+minutes?\b/gi, '$1 މިނިޓް')
+                .replace(/\b(\d+)\s+seconds?\b/gi, '$1 ދެވަނަ');
+        }
 
-            document.addEventListener('DOMContentLoaded', function() {
-                var postTitles = document.querySelectorAll('.fl-post-grid-title');
-                var postComments = document.querySelectorAll('.fl-post-feed-comments');
+        document.addEventListener('DOMContentLoaded', function() {
+            var postTitles = document.querySelectorAll('.fl-post-grid-title');
+            var postComments = document.querySelectorAll('.fl-post-feed-comments');
 
-                postComments.forEach(function(comment) {
-                    var postLink = comment.querySelector('a');
+            postComments.forEach(function(comment) {
+                var postLink = comment.querySelector('a');
 
-                    if (postLink) {
-                        // 1. Get the Post ID
-                        var postGridPost = comment.closest('.fl-post-grid-post');
+                if (postLink) {
+                    // 1. Get the Post ID
+                    var postGridPost = comment.closest('.fl-post-grid-post');
 
-                        if (postGridPost) {
-                            var classList = postGridPost.getAttribute('class');
-                            var match = classList.match(/post-(\d+)/);
-                            var postId = match ? match[1] : null;
+                    if (postGridPost) {
+                        var classList = postGridPost.getAttribute('class');
+                        var match = classList.match(/post-(\d+)/);
+                        var postId = match ? match[1] : null;
 
-                            if (postId && postTimesData[postId]) {
-                                var postGridText = postGridPost.querySelector('.fl-post-grid-text');
+                        if (postId && postTimesData[postId]) {
+                            var postGridText = postGridPost.querySelector('.fl-post-grid-text');
 
-                                // We target the EXISTING date class (.fl-post-grid-date)
-                                var timeElapsedEl = postGridText.querySelector('.fl-post-grid-meta .fl-post-grid-date');
+                            // We target the EXISTING date class (.fl-post-grid-date)
+                            var timeElapsedEl = postGridText.querySelector('.fl-post-grid-meta .fl-post-grid-date');
 
-                                // Fallback: If not in meta, try searching generally in text area
-                                if (!timeElapsedEl) {
-                                    timeElapsedEl = postGridText.querySelector('.fl-post-grid-date');
-                                }
+                            // Fallback: If not in meta, try searching generally in text area
+                            if (!timeElapsedEl) {
+                                timeElapsedEl = postGridText.querySelector('.fl-post-grid-date');
+                            }
 
-                                // Get the original date text (e.g., "Jan 4, 2026") to show in parentheses
-                                var originalDate = timeElapsedEl ? timeElapsedEl.textContent.trim() : '';
+                            // Get the original date text (e.g., "Jan 4, 2026") to show in parentheses
+                            var originalDate = timeElapsedEl ? timeElapsedEl.textContent.trim() : '';
 
-                                // Abbreviate the time string
-                                var abbreviatedTime = abbreviateTime(postTimesData[postId]);
+                            // Abbreviate the time string
+                            var abbreviatedTime = abbreviateTime(postTimesData[postId]);
 
-                                // Construct the new HTML
-                                // Result: Posted: 2 hr ago (Jan 4, 2026)
-                                var dateSuffix = originalDate ? ' (' + originalDate + ')' : '';
+                            // Construct the new HTML
+                            // Result: Posted: 2 hr ago (Jan 4, 2026)
+                            var dateSuffix = originalDate ? ' (' + originalDate + ')' : '';
 
-                                // Create time elapsed HTML with clock icon
-                                var timeHtml = '<span class="fl-post-time-elapsed">' +
-                                    '<i class="far fa-clock"></i> ' +
-                                    abbreviatedTime +
-                                    '</span>';
+                            // Create time elapsed HTML with clock icon
+                            var timeHtml = '<span class="fl-post-time-elapsed">' +
+                                '<i class="far fa-clock"></i> ' +
+                                abbreviatedTime +
+                                '</span>';
 
-                                // Insert the time HTML after the comment element
-                                comment.insertAdjacentHTML('afterend', timeHtml);
+                            // Insert the time HTML after the comment element
+                            comment.insertAdjacentHTML('afterend', timeHtml);
 
-                                // Optional: Hide the original date element to avoid duplicates
-                                if (timeElapsedEl) {
-                                    timeElapsedEl.style.display = 'none';
-                                }
+                            // Optional: Hide the original date element to avoid duplicates
+                            if (timeElapsedEl) {
+                                timeElapsedEl.style.display = 'none';
                             }
                         }
                     }
-                });
+                }
             });
-        </script>
-    <?php
+        });
+    </script>
+<?php
 }
 
 // Enqueue external stylesheet
@@ -3092,13 +3092,14 @@ add_shortcode('wwmt_ad', 'wwmt_ad_shortcode');
  */
 function wwmt_ads_register_admin_page()
 {
-    add_submenu_page(
-        'my-plugin-slug',
+    add_menu_page(
         'Advertisement Spaces',
-        'Advertisement Spaces',
+        'Ad Spaces',
         'moderate_comments',
         'wwmt-ad-manager',
-        'wwmt_ads_render_admin_page'
+        'wwmt_ads_render_admin_page',
+        'dashicons-megaphone',
+        25
     );
 }
 
@@ -3107,7 +3108,10 @@ function wwmt_ads_register_admin_page()
  */
 function wwmt_ads_enqueue_scripts($hook)
 {
-    if ($hook !== 'custom-plugin_page_wwmt-ad-manager') {
+    // if ($hook !== 'custom-plugin_page_wwmt-ad-manager') {
+    //     return;
+    // }
+    if ($hook !== 'toplevel_page_wwmt-ad-manager') {
         return;
     }
 
@@ -3589,13 +3593,14 @@ add_filter('upload_mimes', function ($mimes) {
 add_action('admin_menu', 'cad_add_comments_accordion_menu');
 function cad_add_comments_accordion_menu()
 {
-    add_submenu_page(
-        'my-plugin-slug',
+    add_menu_page(
         'Comments by Post',
         'Comments by Post',
         'edit_posts',
         'comments-by-post',
-        'cad_render_comments_accordion_page'
+        'cad_render_comments_accordion_page',
+        'dashicons-admin-comments',
+        26
     );
 }
 
@@ -3605,7 +3610,10 @@ function cad_add_comments_accordion_menu()
 add_action('admin_enqueue_scripts', 'cad_enqueue_comments_accordion_assets');
 function cad_enqueue_comments_accordion_assets($hook)
 {
-    if ($hook !== 'custom-plugin_page_comments-by-post') {
+    // if ($hook !== 'custom-plugin_page_comments-by-post') {
+    //     return;
+    // }
+    if ($hook !== 'toplevel_page_comments-by-post') {
         return;
     }
 
@@ -4217,14 +4225,23 @@ add_shortcode('news_home_layout', function ($atts) {
 
     </div>
 
-    <?php
+<?php
     return ob_get_clean();
 });
 
 // ============================================================================
 // 52. EVENT MEDIA MANAGER PLUGIN INTEGRATION
-require_once plugin_dir_path(__FILE__) . 'event-media-manager/event-media-manager.php';
 // ============================================================================
 
+require_once plugin_dir_path(__FILE__) . 'event-media-manager/event-media-manager.php';
 
 
+// ============================================================================
+// 53. DEBUG ADMIN HOOKS
+// ============================================================================
+// function debug_admin_hooks($hook) {
+//     if (strpos($hook, 'wwmt-ad-manager') !== false || strpos($hook, 'comments-by-post') !== false) {
+//         echo '<div class="notice notice-info"><p>Current hook: ' . esc_html($hook) . '</p></div>';
+//     }
+// }
+// add_action('admin_enqueue_scripts', 'debug_admin_hooks', 1);
