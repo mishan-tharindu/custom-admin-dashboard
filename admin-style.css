@@ -2,18 +2,21 @@
  * CUSTOM ADMIN DASHBOARD STYLES
  * ========================================================================= */
 
- /* Yost seo  */
- input#focus-keyword-input-metabox, .sc-jTjUTQ.sc-lknQiW.sc-iLmQsS.hNOwVr.gBPAQM.fqlTTD.yst-replacevar__editor, input#yoast-google-preview-slug-metabox {
+/* Yost seo  */
+input#focus-keyword-input-metabox,
+.sc-jTjUTQ.sc-lknQiW.sc-iLmQsS.hNOwVr.gBPAQM.fqlTTD.yst-replacevar__editor,
+input#yoast-google-preview-slug-metabox {
     direction: rtl !important;
-    text-align: right !important; 
- }
+    text-align: right !important;
+}
 
- /* ACF Field   */
+/* ACF Field   */
 
-input#acf-field_694c7c3a49ab7, textarea#acf-field_694c7c5649ab8 {
+input#acf-field_694c7c3a49ab7,
+textarea#acf-field_694c7c5649ab8 {
     direction: rtl !important;
-    text-align: right !important; 
- }
+    text-align: right !important;
+}
 
 /* =========================================================================
 * 01. Hide default WordPress dashboard widgets
@@ -155,7 +158,12 @@ div#ogf-rss-feed {
 #adminmenu,
 #adminmenu .wp-submenu {
     background: #ff6701;
-    width: 160px;
+    width: 225px;
+}
+
+#wpcontent,
+#wpfooter {
+    margin-left: 225px;
 }
 
 #adminmenuback {
@@ -297,6 +305,11 @@ div#ogf-rss-feed {
     content: '\f4fb';
 }
 
+/* ACF */
+#toplevel_page_edit-post_type-acf-field-group .wp-menu-image:before {
+    content: '\f666';
+}
+
 /* Posts */
 #adminmenu li.menu-icon-post .wp-menu-image:before {
     content: '\f5ad';
@@ -349,7 +362,30 @@ div#ogf-rss-feed {
 
 /* Custom Plugin */
 #adminmenu .toplevel_page_my-plugin-slug .wp-menu-image:before {
-    content: '\f013';
+    content: '\f05a';
+}
+
+/* Advertisement Spaces */
+#adminmenu .toplevel_page_wwmt-ad-manager .wp-menu-image:before {
+    content: '\f641';
+}
+
+/* Comments by Post */
+#adminmenu .toplevel_page_comments-by-post .wp-menu-image:before {
+    content: '\f4ad';
+    /* Comments icon */
+}
+
+/* Homepage Layout */
+#adminmenu .toplevel_page_homepage-layout .wp-menu-image:before {
+    content: '\f015';
+    /* Page icon */
+}
+
+/* Event Media */
+#adminmenu .toplevel_page_emm-dashboard .wp-menu-image:before {
+    content: '\f543';
+    /* Page icon */
 }
 
 /* =========================================================================
@@ -507,15 +543,15 @@ div#ogf-rss-feed {
 /* =========================================================================
  * 10. Ready for Review button Styling
  * ========================================================================= */
- button.components-button.editor-post-save-draft.is-compact.is-tertiary {
+button.components-button.editor-post-save-draft.is-compact.is-tertiary {
     background: #FF6701;
     color: black;
 }
 
- button.components-button.editor-post-save-draft.is-compact.is-tertiary:hover {
+button.components-button.editor-post-save-draft.is-compact.is-tertiary:hover {
     background: #FF8C4D;
     color: white;
- }
+}
 
 
 /* =========================================================================

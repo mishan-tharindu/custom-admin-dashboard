@@ -3155,11 +3155,11 @@ function wwmt_ads_render_admin_page()
     }
 
     $ad_spaces = [
-        'wwmt-advertisment-space-01' => 'Advertisement Space 01',
-        'wwmt-advertisment-space-02' => 'Advertisement Space 02',
-        'wwmt-advertisment-space-03' => 'Advertisement Space 03',
-        'wwmt-advertisment-space-04' => 'Advertisement Space 04',
-        'wwmt-advertisment-space-05' => 'Advertisement Space 05',
+        'wwmt-advertisment-space-01' => 'Advertisement Heder Top',
+        'wwmt-advertisment-space-02' => 'Advertisement Home Page Hero Left Side',
+        'wwmt-advertisment-space-03' => 'Advertisement Before Post Gallery',
+        'wwmt-advertisment-space-04' => 'Advertisement Post Single Sidebar - Left',
+        'wwmt-advertisment-space-05' => 'Advertisement Post Single - Before Comments Section',
     ];
 
 ?>
