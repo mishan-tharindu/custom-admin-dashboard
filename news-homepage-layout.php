@@ -160,7 +160,7 @@ class News_Homepage_Layout
         add_menu_page(
             'Homepage Layout',
             'Homepage Layout',
-            'edit_posts',
+            'edit_pages',
             'homepage-layout',
             [$this, 'render_page'],
             'dashicons-screenoptions',
