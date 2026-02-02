@@ -16,16 +16,16 @@ define(
 /* =========================================================
    1. REGISTER EVENT (FOLDER) CPT
 ========================================================= */
-add_action('init', function () {
+// add_action('init', function () {
 
-    register_post_type('emm_event', [
-        'label' => 'Events',
-        'public' => false,
-        'show_ui' => true,
-        'supports' => ['title', 'page-attributes'], // 🔥 enables menu_order
-        'menu_icon' => 'dashicons-calendar-alt',
-    ]);
-});
+//     register_post_type('emm_event', [
+//         'label' => 'Events',
+//         'public' => false,
+//         'show_ui' => true,
+//         'supports' => ['title', 'page-attributes'], // 🔥 enables menu_order
+//         'menu_icon' => 'dashicons-calendar-alt',
+//     ]);
+// });
 
 /* =========================================================
    2. ADMIN MENU — EVENT MEDIA DASHBOARD
@@ -35,7 +35,7 @@ add_action('admin_menu', function () {
     add_menu_page(
         'Event Media',
         'Event Media',
-        'upload_files',
+        'edit_pages',
         'emm-dashboard',
         'emm_render_dashboard',
         'dashicons-format-gallery',
