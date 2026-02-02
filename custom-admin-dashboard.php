@@ -4176,7 +4176,9 @@ add_shortcode('news_home_layout', function ($atts) {
             'meta_value_num' => 'ASC',
             'date'           => 'DESC'
         ],
-        'posts_per_page' => (int) $atts['posts']
+        // 'posts_per_page' => (int) $atts['posts']
+        'posts_per_page' => 4
+
     ]);
 
     /* =========================
@@ -4207,21 +4209,27 @@ add_shortcode('news_home_layout', function ($atts) {
         <!-- GRID -->
         <div class="news-grid">
             <?php
+            $loaded_ids = [];
+
             if ($grid->have_posts()) :
                 while ($grid->have_posts()) : $grid->the_post();
+                    $loaded_ids[] = get_the_ID();
                     echo nhl_post_card(get_post(), false);
                 endwhile;
                 wp_reset_postdata();
             endif;
+
             ?>
         </div>
 
         <button
             class="news-load-more"
             data-category="<?= esc_attr($category); ?>"
-            data-page="1">
+            data-loaded='<?= esc_attr(json_encode($loaded_ids)); ?>'>
             Load More
         </button>
+
+
 
     </div>
 

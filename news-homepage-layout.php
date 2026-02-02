@@ -413,37 +413,57 @@ class News_Homepage_Layout
 
     public function nhl_load_more_news()
     {
+        $category = sanitize_text_field($_POST['category'] ?? 'news');
+        $loaded   = array_map('intval', $_POST['loaded'] ?? []);
 
-        $page = isset($_POST['page']) ? (int) $_POST['page'] : 1;
+        $slot_key = $category . '_slot';
+        $grid_key = $category . '_grid_position';
 
         $query = new WP_Query([
-            'category_name' => 'news',
+            'category_name'  => $category,
+            'posts_per_page' => 12,
+            'post__not_in'   => $loaded,
             'meta_query' => [
                 'relation' => 'OR',
+                ['key' => $slot_key, 'compare' => 'NOT EXISTS'],
                 [
-                    'key'     => 'news_slot',
-                    'compare' => 'NOT EXISTS'
-                ],
-                [
-                    'key'     => 'news_slot',
+                    'key'     => $slot_key,
                     'value'   => ['featured', 'top_1', 'top_2', 'top_3', 'top_4'],
                     'compare' => 'NOT IN'
                 ],
             ],
-            'posts_per_page' => 8,
-            'paged' => $page + 1
+            'meta_key' => $grid_key,
+            'orderby'  => [
+                'meta_value_num' => 'ASC',
+                'date'           => 'DESC'
+            ],
         ]);
 
-        if ($query->have_posts()) :
-            while ($query->have_posts()) : $query->the_post(); ?>
-                <div class="news-grid-item">
-                    <h5><?php the_title(); ?></h5>
-                </div>
-    <?php endwhile;
-        endif;
+        if (!$query->have_posts()) {
+            wp_send_json([]);
+        }
 
-        wp_die();
+        $html = '';
+        $ids  = [];
+
+        while ($query->have_posts()) {
+            $query->the_post();
+            $ids[] = get_the_ID();
+            $html .= nhl_post_card(get_post(), false);
+        }
+
+        wp_reset_postdata();
+
+        $has_more = ($query->found_posts > count($ids));
+
+        wp_send_json([
+            'html'     => $html,
+            'ids'      => $ids,
+            'has_more' => $has_more
+        ]);
     }
+
+
 
     public function save_grid_order()
     {
