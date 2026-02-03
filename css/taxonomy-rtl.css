@@ -1,0 +1,47 @@
+/* ============================================================================
+   RTL STYLES — CATEGORY & TAG PAGES
+   ============================================================================ */
+
+/* Category & Tag Form Wrapper */
+.form-wrap {
+    direction: rtl;
+}
+
+/* All Form Fields */
+.form-field input[type="text"],
+.form-field input[type="email"],
+.form-field input[type="url"],
+.form-field textarea {
+    direction: rtl;
+    text-align: right;
+}
+
+/* Specific Tag Inputs */
+#tag-name,
+#tag-slug,
+#tag-description {
+    direction: rtl;
+    text-align: right;
+}
+
+/* Parent Category Dropdown (optional) */
+/*
+select.postform {
+    direction: rtl;
+}
+*/
+
+/* Labels */
+/*
+.form-field label {
+    display: block;
+    text-align: right;
+}
+*/
+
+/* Help Text */
+/*
+.form-field p {
+    text-align: right;
+}
+*/

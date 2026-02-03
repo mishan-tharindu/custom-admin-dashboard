@@ -2,6 +2,17 @@
  * CUSTOM ADMIN DASHBOARD STYLES
  * ========================================================================= */
 
+ /* Block Editor Css Style  */
+ .wp-block-post-title {
+        font-family: 'Mt MV Bodu' !important;
+ }
+
+/* Admin Hover Trangle Style  */
+#adminmenu li.wp-has-submenu.wp-not-current-submenu.opensub:hover:after {
+        border-right-color: transparent !important;
+}
+
+
 /* Yost seo  */
 input#focus-keyword-input-metabox,
 .sc-jTjUTQ.sc-lknQiW.sc-iLmQsS.hNOwVr.gBPAQM.fqlTTD.yst-replacevar__editor,

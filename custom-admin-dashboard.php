@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Custom Admin Dashboard
  * Description: A custom plugin to modify and clean up the WordPress admin dashboard. [wwmt_time_ago] or [wwmt_time_ago icon="clock"], [post_image_count], [date_weather], [wwmt_ad space_id="wwmt-advertisment-space-01"], [wwmt_ad space_id="wwmt-advertisment-space-02"], [wwmt_ad space_id="wwmt-advertisment-space-03"], [wwmt_ad space_id="wwmt-advertisment-space-04"], [wwmt_ad space_id="wwmt-advertisment-space-05"],[post_reactions]
- * Version: 2.0.3
+ * Version: 2.0.4
  * Author: TechM
  * Author URI: https://yourwebsite.com
  * Text Domain: custom-admin-dashboard
@@ -1650,139 +1650,40 @@ function post_time_enqueue_styles()
 }
 
 // ============================================================================
-// 32. FORCE RTL (RIGHT-TO-LEFT) IN EDITORS - FIXED
+// 32. BLOCK EDITOR RTL STYLES
 // ============================================================================
 
-/**
- * Method 2: Inline CSS directly (Alternative if CSS file doesn't work)
- * Uncomment if Method 1 doesn't work for you
- */
-
-function cad_add_block_editor_rtl_styles()
+function cad_enqueue_block_editor_rtl_styles()
 {
-    $css = "
-        /* Core Editor Container */
-        .edit-post-visual-editor,
-        .block-editor-writing-flow,
-        .wp-block-post-title,
-        .editor-post-title__input {
-            direction: rtl !important;
-            text-align: right !important;
-        }
-
-        /* Post Title */
-        .editor-post-title__input,
-        h1.editor-post-title__input {
-            direction: rtl !important;
-            text-align: right !important;
-            font-family: 'MV Faseyha', 'Thamaan', sans-serif !important;
-        }
-
-        /* Paragraph & Text Blocks */
-        .wp-block-paragraph,
-        .block-editor-rich-text__editable[data-is-placeholder-visible='false'],
-        p[role='textbox'] {
-            direction: rtl !important;
-            text-align: right !important;
-        }
-
-        /* Headings */
-        .wp-block-heading {
-            direction: rtl !important;
-            text-align: right !important;
-        }
-
-        /* Lists */
-        .wp-block-list,
-        .wp-block-list li {
-            direction: rtl !important;
-        }
-
-        /* All Block Content */
-        .wp-block {
-            direction: rtl !important;
-        }
-
-        /* Text Align Controls - ensure right-align is default */
-        [class*='text-align'] {
-            direction: rtl !important;
-        }
-
-        /* Form Tags field in Editor */
-        .components-form-token-field__input-container input[type=text].components-form-token-field__input {
-            direction: rtl !important;
-            text-align: right !important;
-        }
-
-        /* Form Category & Tag fields in Editor */
-        .components-text-control__input, .components-text-control__input[type=color], .components-text-control__input[type=date], 
-        .components-text-control__input[type=datetime-local], .components-text-control__input[type=datetime], .components-text-control__input[type=email], 
-        .components-text-control__input[type=month], .components-text-control__input[type=number], .components-text-control__input[type=password], 
-        .components-text-control__input[type=tel], .components-text-control__input[type=text], .components-text-control__input[type=time], .components-text-control__input[type=url], 
-        .components-text-control__input[type=week] {
-            direction: rtl !important;
-            text-align: right !important;
-        }
-
-    ";
-
-    wp_add_inline_style('wp-edit-blocks', $css);
+    wp_enqueue_style(
+        'cad-block-editor-rtl',
+        plugin_dir_url(__FILE__) . 'css/block-editor.css',
+        ['wp-edit-blocks'],
+        '1.0.0'
+    );
 }
-add_action('enqueue_block_editor_assets', 'cad_add_block_editor_rtl_styles');
+add_action('enqueue_block_editor_assets', 'cad_enqueue_block_editor_rtl_styles');
 
-// RTL Styles for Category and Tag Pages
-function cad_add_taxonomy_rtl_styles()
+
+// ============================================================================
+// TAXONOMY RTL STYLES (CATEGORY / TAG ONLY)
+// ============================================================================
+
+function cad_enqueue_taxonomy_rtl_styles($hook)
 {
-    $css = "
-        /* Category & Tag Form Wrapper */
-        .form-wrap {
-            // direction: rtl !important;
-        }
+    // Load only on category & tag pages
+    if (!in_array($hook, ['edit-tags.php', 'term.php'], true)) {
+        return;
+    }
 
-        /* All Form Fields */
-        .form-field input[type=text],
-        .form-field input[type=email],
-        .form-field input[type=url],
-        .form-field textarea{
-            direction: rtl !important;
-            text-align: right !important;
-        }
-
-        /* Specific Input Fields */
-        #tag-name,
-        #tag-slug,
-        #tag-description{
-            direction: rtl !important;
-            text-align: right !important;
-        }
-
-        // /* Parent Category/Tag Dropdown */
-        // select.postform {
-        //     direction: rtl !important;
-        // }
-
-        // /* Description Textarea */
-        // textarea[name='description'] {
-        //     direction: rtl !important;
-        //     text-align: right !important;
-        // }
-
-        // /* Form Field Labels */
-        // .form-field label {
-        //     display: block !important;
-        //     text-align: right !important;
-        // }
-
-        // /* Description Paragraphs */
-        // .form-field p {
-        //     text-align: right !important;
-        // }
-
-    ";
-
-    wp_add_inline_style('wp-admin', $css);
+    wp_enqueue_style(
+        'cad-taxonomy-rtl',
+        plugin_dir_url(__FILE__) . 'css/taxonomy-rtl.css',
+        [],
+        '1.0.0'
+    );
 }
-add_action('admin_enqueue_scripts', 'cad_add_taxonomy_rtl_styles');
+add_action('admin_enqueue_scripts', 'cad_enqueue_taxonomy_rtl_styles');
 
 // ============================================================================
 // 33. Show Category and Tag Management to Editor Role

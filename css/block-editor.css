@@ -1,0 +1,75 @@
+/* ============================================================================
+   BLOCK EDITOR RTL FIXES
+   ============================================================================ */
+
+/* Core Editor Container */
+.edit-post-visual-editor,
+.block-editor-writing-flow,
+.wp-block-post-title,
+.editor-post-title__input {
+    direction: rtl !important;
+    text-align: right !important;
+}
+
+/* Post Title */
+.editor-post-title__input,
+h1.editor-post-title__input {
+    direction: rtl !important;
+    text-align: right !important;
+    font-family: 'MV Bodu', 'Thamaan', sans-serif !important;
+}
+
+/* Paragraph & Text Blocks */
+.wp-block-paragraph,
+.block-editor-rich-text__editable[data-is-placeholder-visible='false'],
+p[role='textbox'] {
+    direction: rtl !important;
+    text-align: right !important;
+}
+
+/* Headings */
+.wp-block-heading {
+    direction: rtl !important;
+    text-align: right !important;
+}
+
+/* Lists */
+.wp-block-list,
+.wp-block-list li {
+    direction: rtl !important;
+}
+
+/* All Block Content */
+.wp-block {
+    direction: rtl !important;
+}
+
+/* Text Align Controls */
+[class*='text-align'] {
+    direction: rtl !important;
+}
+
+/* Tags / Token Fields */
+.components-form-token-field__input-container input.components-form-token-field__input {
+    direction: rtl !important;
+    text-align: right !important;
+}
+
+/* Inputs (Categories, Tags, Meta, etc.) */
+.components-text-control__input,
+.components-text-control__input[type="color"],
+.components-text-control__input[type="date"],
+.components-text-control__input[type="datetime-local"],
+.components-text-control__input[type="datetime"],
+.components-text-control__input[type="email"],
+.components-text-control__input[type="month"],
+.components-text-control__input[type="number"],
+.components-text-control__input[type="password"],
+.components-text-control__input[type="tel"],
+.components-text-control__input[type="text"],
+.components-text-control__input[type="time"],
+.components-text-control__input[type="url"],
+.components-text-control__input[type="week"] {
+    direction: rtl !important;
+    text-align: right !important;
+}

@@ -55,6 +55,11 @@
     object-fit: cover;
 }
 
+.news-load-more {
+    display: block;
+    margin: 40px auto 0;
+}
+
 .news-featured .news-thumb img {
     height: 350px;
 }
