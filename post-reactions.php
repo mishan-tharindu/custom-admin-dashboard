@@ -17,7 +17,7 @@ class Post_Reactions {
         add_action('wp_enqueue_scripts', [$this, 'enqueue_scripts']);
         add_action('wp_ajax_react_to_post', [$this, 'handle_reaction']);
         add_action('wp_ajax_nopriv_react_to_post', [$this, 'handle_reaction']);
-        add_filter('the_content', [$this, 'add_reactions_to_content']);
+        // add_filter('the_content', [$this, 'add_reactions_to_content']); // Uncomment to auto-append reactions to post content
         add_shortcode('post_reactions', [$this, 'render_reactions_shortcode']);
     }
     
