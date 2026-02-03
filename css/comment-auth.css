@@ -1,3 +1,27 @@
+/* Hide theme-injected reply title */
+#reply-title {
+    font-size: 0 !important;
+    line-height: 0 !important;
+}
+
+h3#reply-title {
+    direction: rtl !important;
+    text-align: right !important;
+}
+
+/* Restore text using :before */
+#reply-title::before {
+    content: attr(data-title);
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.4;
+    display: block;
+}
+
+
+.fl-comments-list-title {
+    display: none !important;
+}
 
 .fl-comments-list .comment-content {
     border: none !important;
@@ -15,8 +39,10 @@
 /* Parent container */
 .wwmt-comment-details-section {
     display: flex;
-    align-items: center;         /* Vertically centers both children */
-    justify-content: space-between; /* Pushes children to opposite ends */
+    align-items: center;
+    /* Vertically centers both children */
+    justify-content: space-between;
+    /* Pushes children to opposite ends */
     margin-top: 10px;
 }
 
@@ -24,7 +50,8 @@
 .wwmt-comment-time-elscaped {
     font-size: 12px;
     color: #888;
-    order: 2; /* Ensures it stays on the left */
+    order: 2;
+    /* Ensures it stays on the left */
 
     /* display: flex;
     align-items: center;
@@ -44,7 +71,8 @@
 .emoji-reactions-container {
     display: flex;
     align-items: center;
-    order: 1; /* Ensures it stays on the right */
+    order: 1;
+    /* Ensures it stays on the right */
 }
 
 /* Make fl-comments a flex container */

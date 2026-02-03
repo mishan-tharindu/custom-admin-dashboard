@@ -2971,6 +2971,50 @@ function handle_emoji_reaction()
 }
 
 // ============================================================================
+// 42.  DYNAMIC COMMENT FORM TITLE BASED ON COMMENT COUNT
+// ============================================================================
+
+add_filter('comment_form_defaults', function ($defaults) {
+
+    if (!is_singular()) {
+        return $defaults;
+    }
+
+    $count = get_comments_number();
+
+    if ($count === 0) {
+        $title = 'No Comments';
+    } elseif ($count === 1) {
+        $title = '1 Comment';
+    } else {
+        $title = $count . ' Comments';
+    }
+
+    // Force override
+    $defaults['title_reply'] = $title;
+    $defaults['title_reply_to'] = $title;
+
+    return $defaults;
+}, 99);
+
+add_action('wp_enqueue_scripts', function () {
+
+    if (!is_singular() || !comments_open()) {
+        return;
+    }
+
+    wp_enqueue_script(
+        'wwmt-comment-reply-title',
+        plugin_dir_url(__FILE__) . 'js/comment-reply-title.js',
+        [],
+        '1.0.0',
+        true // footer
+    );
+});
+
+
+
+// ============================================================================
 // 43.  ADMIN PAGE FOR MANAGING ADVERTISEMENT SPACES
 // ============================================================================
 
@@ -3749,7 +3793,7 @@ function cad_load_post_comments_ajax()
                                         </button>
                                     <?php endif; ?>
 
-                                    <a href="<?php echo get_edit_comment_link($comment->comment_ID); ?>" class="button button-small wwmt-comment-edit-btn" >
+                                    <a href="<?php echo get_edit_comment_link($comment->comment_ID); ?>" class="button button-small wwmt-comment-edit-btn">
                                         Edit
                                     </a>
 

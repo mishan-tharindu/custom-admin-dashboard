@@ -1,20 +1,21 @@
 /* =========================================================================
  * CUSTOM ADMIN DASHBOARD STYLES
  * ========================================================================= */
-
- /* Hide Other Widgets  */
- #wpseo-dashboard-overview, #wpseo-wincher-dashboard-overview {
+ 
+/* Hide Other Widgets  */
+#wpseo-dashboard-overview,
+#wpseo-wincher-dashboard-overview {
     display: none !important;
- }
+}
 
- /* Block Editor Css Style  */
- .wp-block-post-title {
-        font-family: 'Mt MV Bodu' !important;
- }
+/* Block Editor Css Style  */
+.wp-block-post-title {
+    font-family: 'Mt MV Bodu' !important;
+}
 
 /* Admin Hover Trangle Style  */
 #adminmenu li.wp-has-submenu.wp-not-current-submenu.opensub:hover:after {
-        border-right-color: transparent !important;
+    border-right-color: transparent !important;
 }
 
 
