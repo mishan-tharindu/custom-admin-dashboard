@@ -207,6 +207,14 @@
     background: #f9f9f9;
 }
 
+.wwmt-comment-edit-btn {
+    display: none !important;
+}
+
+.cad-trash-comment {
+    display: none !important;
+}
+
 @media (max-width: 782px) {
     .cad-post-accordion-header {
         flex-direction: column;

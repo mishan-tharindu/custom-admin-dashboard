@@ -3749,7 +3749,7 @@ function cad_load_post_comments_ajax()
                                         </button>
                                     <?php endif; ?>
 
-                                    <a href="<?php echo get_edit_comment_link($comment->comment_ID); ?>" class="button button-small">
+                                    <a href="<?php echo get_edit_comment_link($comment->comment_ID); ?>" class="button button-small wwmt-comment-edit-btn" >
                                         Edit
                                     </a>
 
