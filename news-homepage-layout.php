@@ -197,7 +197,51 @@ class News_Homepage_Layout
     // Admin Page UI
     public function render_page()
     {
+
+        // Handle settings save
+        if (isset($_POST['nhl_save_settings'])) {
+            check_admin_referer('nhl_settings_nonce');
+
+            $time = sanitize_text_field($_POST['nhl_reset_time']);
+            if (preg_match('/^\d{2}:\d{2}$/', $time)) {
+                update_option('nhl_reset_time', $time);
+                nhl_schedule_daily_reset(); // Reschedule immediately
+                echo '<div class="notice notice-success"><p>Settings saved!</p></div>';
+            }
+        }
+
         echo '<div class="wrap"><h1>Homepage News Layout</h1>';
+
+                // ✅ ADD SETTINGS FORM HERE
+            ?>
+                <div class="nhl-settings-panel">
+                    <h2>⚙️ Auto-Reset Schedule</h2>
+                    <form method="post">
+                        <?php wp_nonce_field('nhl_settings_nonce'); ?>
+                        <table class="form-table">
+                            <tr>
+                                <th scope="row">Daily Reset Time</th>
+                                <td>
+                                    <input type="time" name="nhl_reset_time"
+                                        value="<?= esc_attr(get_option('nhl_reset_time', '00:00')); ?>"
+                                        required>
+                                    <p class="description">
+                                        Layout will reset daily at this time<br>
+                                        Server timezone: <strong><?= wp_timezone_string(); ?></strong><br>
+                                        Current server time: <strong><?= current_time('H:i'); ?></strong>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                        <p class="submit">
+                            <button type="submit" name="nhl_save_settings" class="button button-primary">
+                                Save Settings
+                            </button>
+                        </p>
+                    </form>
+                </div>
+                <hr>
+            <?php
 
         // 🔥 Load categories dynamically
         $categories = get_categories([
@@ -578,3 +622,118 @@ function nhl_post_card($post, $is_featured = false)
 <?php
     return ob_get_clean();
 }
+
+// ============================================================================
+// DAILY RESET CRON (CUSTOM TIME, SELF-HEALING)
+// ============================================================================
+
+// 1️⃣ EXECUTE THE RESET
+add_action('nhl_daily_category_reset', function () {
+
+    $categories = get_categories([
+        'hide_empty' => false,
+        'exclude'    => [1], // Exclude Uncategorized
+    ]);
+
+    foreach ($categories as $cat) {
+
+        $slot_key = $cat->slug . '_slot';
+
+        $posts = get_posts([
+            'category_name' => $cat->slug,
+            'numberposts'   => -1,
+            'orderby'       => 'date',
+            'order'         => 'DESC'
+        ]);
+
+        // Clear all slots
+        foreach ($posts as $p) {
+            delete_post_meta($p->ID, $slot_key);
+        }
+
+        // Reassign defaults
+        if (!empty($posts)) {
+            update_post_meta($posts[0]->ID, $slot_key, 'featured');
+
+            $top_slots = ['top_1', 'top_2', 'top_3', 'top_4'];
+            for ($i = 0; $i < 4; $i++) {
+                if (isset($posts[$i + 1])) {
+                    update_post_meta($posts[$i + 1]->ID, $slot_key, $top_slots[$i]);
+                }
+            }
+        }
+    }
+
+    error_log('NHL: Daily category reset executed at ' . current_time('mysql'));
+});
+
+
+// 2️⃣ SCHEDULE THE EVENT
+function nhl_schedule_daily_reset()
+{
+    wp_clear_scheduled_hook('nhl_daily_category_reset');
+
+    $time = get_option('nhl_reset_time', '00:00');
+
+    // Validate HH:MM
+    if (!preg_match('/^\d{2}:\d{2}$/', $time)) {
+        $time = '00:00';
+    }
+
+    // Use WordPress timezone
+    $timezone = new DateTimeZone(wp_timezone_string());
+    $datetime = new DateTime('today ' . $time, $timezone);
+
+    // If time already passed today, schedule for tomorrow
+    $now = new DateTime('now', $timezone);
+    if ($datetime <= $now) {
+        $datetime->modify('+1 day');
+    }
+
+    wp_schedule_event(
+        $datetime->getTimestamp(),
+        'daily',
+        'nhl_daily_category_reset'
+    );
+}
+
+
+// 3️⃣ ENSURE CRON EXISTS
+add_action('init', function () {
+    if (!wp_next_scheduled('nhl_daily_category_reset')) {
+        nhl_schedule_daily_reset();
+    }
+});
+
+
+// 4️⃣ CLEANUP ON DEACTIVATION
+register_deactivation_hook(__FILE__, function () {
+    wp_clear_scheduled_hook('nhl_daily_category_reset');
+});
+
+
+
+
+// Add settings field
+add_action('admin_init', function () {
+    register_setting('nhl_settings', 'nhl_reset_time');
+
+    add_settings_section(
+        'nhl_cron_section',
+        'Auto-Reset Schedule',
+        null,
+        'homepage-layout'
+    );
+
+    add_settings_field(
+        'nhl_reset_time',
+        'Daily Reset Time',
+        function () {
+            $time = get_option('nhl_reset_time', '00:00');
+            echo '<input type="time" name="nhl_reset_time" value="' . esc_attr($time) . '">';
+            echo '<p class="description">Layout will reset daily at this time (server timezone: ' . wp_timezone_string() . ')</p>';
+        },
+        'homepage-layout',
+        'nhl_cron_section'
+    );
+});

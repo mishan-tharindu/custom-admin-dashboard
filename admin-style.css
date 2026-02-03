@@ -1,7 +1,29 @@
 /* =========================================================================
  * CUSTOM ADMIN DASHBOARD STYLES
  * ========================================================================= */
- 
+
+/* =========================================================
+   MOVE METABOXES (ACF, Yoast, etc.) TO TOP OF EDITOR
+========================================================= */
+
+.edit-post-layout__content {
+    /* display: flex; */
+    /* flex-direction: column; */
+}
+
+/* Metabox container */
+.edit-post-meta-boxes-main {
+    order: -1;
+    /* 🔥 Move to top */
+    margin-bottom: 16px;
+}
+
+/* Editor content goes after */
+/* .interface-interface-skeleton__content {
+    order: 1;
+} */
+
+
 /* Hide Other Widgets  */
 #wpseo-dashboard-overview,
 #wpseo-wincher-dashboard-overview {
