@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Custom Admin Dashboard
  * Description: A custom plugin to modify and clean up the WordPress admin dashboard. [wwmt_time_ago] or [wwmt_time_ago icon="clock"], [post_image_count], [date_weather], [wwmt_ad space_id="wwmt-advertisment-space-01"], [wwmt_ad space_id="wwmt-advertisment-space-02"], [wwmt_ad space_id="wwmt-advertisment-space-03"], [wwmt_ad space_id="wwmt-advertisment-space-04"], [wwmt_ad space_id="wwmt-advertisment-space-05"],[post_reactions]
- * Version: 2.1.4
+ * Version: 2.1.5
  * Author: TechM
  * Author URI: https://yourwebsite.com
  * Text Domain: custom-admin-dashboard
@@ -407,47 +407,47 @@ add_action('admin_init', 'cad_register_settings');
 
 function my_plugin_settings_page()
 {
-        if (!current_user_can('manage_options')) {
-            wp_die(esc_html__('You do not have permission to access this page.', 'custom-admin-dashboard'));
-        }
+    if (!current_user_can('manage_options')) {
+        wp_die(esc_html__('You do not have permission to access this page.', 'custom-admin-dashboard'));
+    }
 
-        // Get the saved image ID
-        $default_image_id = get_option('cad_default_featured_image');
-        $image_url = $default_image_id ? wp_get_attachment_url($default_image_id) : '';
-    ?>
-        <div class="wrap">
-            <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+    // Get the saved image ID
+    $default_image_id = get_option('cad_default_featured_image');
+    $image_url = $default_image_id ? wp_get_attachment_url($default_image_id) : '';
+?>
+    <div class="wrap">
+        <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
 
-            <form method="post" action="options.php" style="background: #fff; padding: 20px; border: 1px solid #ccd0d4; max-width: 800px; margin-top: 20px;">
-                <?php settings_fields('cad_plugin_options_group'); ?>
-                <?php do_settings_sections('cad_plugin_options_group'); ?>
+        <form method="post" action="options.php" style="background: #fff; padding: 20px; border: 1px solid #ccd0d4; max-width: 800px; margin-top: 20px;">
+            <?php settings_fields('cad_plugin_options_group'); ?>
+            <?php do_settings_sections('cad_plugin_options_group'); ?>
 
-                <h2>Default Post Image</h2>
-                <p>Select an image to use as the Featured Image for posts that don't have one set.</p>
+            <h2>Default Post Image</h2>
+            <p>Select an image to use as the Featured Image for posts that don't have one set.</p>
 
-                <table class="form-table">
-                    <tr valign="top">
-                        <th scope="row">Default Placeholder</th>
-                        <td>
-                            <div id="cad_def_img_preview" style="margin-bottom: 10px;">
-                                <?php if ($image_url) : ?>
-                                    <img src="<?php echo esc_url($image_url); ?>" style="max-width: 150px; height: auto; border: 2px solid #ccc;">
-                                <?php endif; ?>
-                            </div>
+            <table class="form-table">
+                <tr valign="top">
+                    <th scope="row">Default Placeholder</th>
+                    <td>
+                        <div id="cad_def_img_preview" style="margin-bottom: 10px;">
+                            <?php if ($image_url) : ?>
+                                <img src="<?php echo esc_url($image_url); ?>" style="max-width: 150px; height: auto; border: 2px solid #ccc;">
+                            <?php endif; ?>
+                        </div>
 
-                            <input type="hidden" name="cad_default_featured_image" id="cad_default_featured_image" value="<?php echo esc_attr($default_image_id); ?>">
+                        <input type="hidden" name="cad_default_featured_image" id="cad_default_featured_image" value="<?php echo esc_attr($default_image_id); ?>">
 
-                            <button type="button" class="button button-secondary" id="cad_def_img_btn">Select Image</button>
-                            <button type="button" class="button button-link-delete" id="cad_def_img_remove" style="<?php echo $default_image_id ? '' : 'display:none;'; ?>">Remove Image</button>
-                        </td>
-                    </tr>
-                </table>
+                        <button type="button" class="button button-secondary" id="cad_def_img_btn">Select Image</button>
+                        <button type="button" class="button button-link-delete" id="cad_def_img_remove" style="<?php echo $default_image_id ? '' : 'display:none;'; ?>">Remove Image</button>
+                    </td>
+                </tr>
+            </table>
 
-                <?php submit_button(); ?>
-            </form>
-        </div>
+            <?php submit_button(); ?>
+        </form>
+    </div>
 
-    <?php
+<?php
 }
 
 // ============================================================================
@@ -3512,3 +3512,28 @@ require_once plugin_dir_path(__FILE__) . 'includes/block-author-restrictions.php
 // ============================================================================
 
 require_once plugin_dir_path(__FILE__) . 'includes/admin-editor-fonts.php';
+
+// ============================================================================
+// 56. PERFORMANCE OPTIMIZATION
+// ============================================================================
+
+add_action('wp_head', function () {
+    if (is_admin()) return;
+
+    $plugin_url = plugin_dir_url(__FILE__);
+?>
+    <link rel="preload" href="<?php echo esc_url($plugin_url . 'fonts/MVBodu.otf'); ?>" as="font" type="font/otf" crossorigin>
+    <link rel="preload" href="<?php echo esc_url($plugin_url . 'fonts/EasaGalanHima.ttf'); ?>" as="font" type="font/ttf" crossorigin>
+<?php
+}, 1);
+
+add_filter('style_loader_tag', function ($html, $handle, $href, $media) {
+    $defer_handles = ['emoji-reactions', 'comment-auth-style', 'custom-post-time-css'];
+
+    if (in_array($handle, $defer_handles)) {
+        $html = str_replace("media='all'", "media='print' onload=\"this.media='all'\"", $html);
+        $html .= "\n<noscript><link rel=\"stylesheet\" href=\"" . esc_url($href) . "\"></noscript>";
+    }
+
+    return $html;
+}, 10, 4);
