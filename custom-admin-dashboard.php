@@ -4198,3 +4198,9 @@ require_once plugin_dir_path(__FILE__) . 'event-media-manager/event-media-manage
 //     }
 // }
 // add_action('admin_enqueue_scripts', 'debug_admin_hooks', 1);
+
+// ============================================================================
+// 54. BLOCK EDITOR RESTRICTIONS FOR AUTHORS
+// ============================================================================
+
+require_once plugin_dir_path(__FILE__) . 'includes/block-author-restrictions.php';

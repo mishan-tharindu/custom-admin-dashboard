@@ -1,0 +1,19 @@
+/* ===============================
+   HIDE COLOR CONTROLS FOR AUTHORS
+   =============================== */
+
+/* Color panel */
+.block-editor-block-inspector
+.color-block-support-panel {
+    display: none !important;
+}
+
+/* Gradient / color dropdowns (extra safety) */
+.block-editor-panel-color-gradient-settings,
+.block-editor-tools-panel-color-gradient-settings {
+    display: none !important;
+}
+
+.block-editor-block-inspector {
+    display: none;
+}
