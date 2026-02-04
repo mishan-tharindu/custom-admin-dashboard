@@ -212,36 +212,36 @@ class News_Homepage_Layout
 
         echo '<div class="wrap"><h1>Homepage News Layout</h1>';
 
-                // ✅ ADD SETTINGS FORM HERE
-            ?>
-                <div class="nhl-settings-panel">
-                    <h2>⚙️ Auto-Reset Schedule</h2>
-                    <form method="post">
-                        <?php wp_nonce_field('nhl_settings_nonce'); ?>
-                        <table class="form-table">
-                            <tr>
-                                <th scope="row">Daily Reset Time</th>
-                                <td>
-                                    <input type="time" name="nhl_reset_time"
-                                        value="<?= esc_attr(get_option('nhl_reset_time', '00:00')); ?>"
-                                        required>
-                                    <p class="description">
-                                        Layout will reset daily at this time<br>
-                                        Server timezone: <strong><?= wp_timezone_string(); ?></strong><br>
-                                        Current server time: <strong><?= current_time('H:i'); ?></strong>
-                                    </p>
-                                </td>
-                            </tr>
-                        </table>
-                        <p class="submit">
-                            <button type="submit" name="nhl_save_settings" class="button button-primary">
-                                Save Settings
-                            </button>
-                        </p>
-                    </form>
-                </div>
-                <hr>
-            <?php
+        // ✅ ADD SETTINGS FORM HERE
+?>
+        <div class="nhl-settings-panel">
+            <h2>⚙️ Auto-Reset Schedule</h2>
+            <form method="post">
+                <?php wp_nonce_field('nhl_settings_nonce'); ?>
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">Daily Reset Time</th>
+                        <td>
+                            <input type="time" name="nhl_reset_time"
+                                value="<?= esc_attr(get_option('nhl_reset_time', '00:00')); ?>"
+                                required>
+                            <p class="description">
+                                Layout will reset daily at this time<br>
+                                Server timezone: <strong><?= wp_timezone_string(); ?></strong><br>
+                                Current server time: <strong><?= current_time('H:i'); ?></strong>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+                <p class="submit">
+                    <button type="submit" name="nhl_save_settings" class="button button-primary">
+                        Save Settings
+                    </button>
+                </p>
+            </form>
+        </div>
+        <hr>
+    <?php
 
         // 🔥 Load categories dynamically
         $categories = get_categories([
@@ -330,7 +330,7 @@ class News_Homepage_Layout
                     echo "
                 <li class='nhl-item' data-id='{$p->ID}'>
                     <img src='{$thumb}'>
-                    <span class='nhl-title'>" . esc_html($p->post_title) . "</span>
+                    <span class='nhl-title'>" . esc_html(nhl_get_post_display_title($p->ID)) . "</span>
                     <span class='nhl-remove'>✖</span>
                 </li>
                 ";
@@ -367,7 +367,7 @@ class News_Homepage_Layout
                 echo "
             <li class='nhl-item' data-id='{$p->ID}'>
                 <img src='{$thumb}'>
-                <span class='nhl-title'>" . esc_html($p->post_title) . "</span>
+                <span class='nhl-title'>" . esc_html(nhl_get_post_display_title($p->ID)) . "</span>
                 <span class='nhl-remove'>✖</span>
             </li>
             ";
@@ -572,8 +572,6 @@ if (!function_exists('nhl_time_elapsed_dv')) {
     }
 }
 
-
-
 function nhl_post_card($post, $is_featured = false)
 {
     $thumb = get_the_post_thumbnail_url($post->ID, 'large');
@@ -597,7 +595,7 @@ function nhl_post_card($post, $is_featured = false)
 
             <h2 class="news-title">
                 <a href="<?= get_permalink($post->ID); ?>">
-                    <?= esc_html($post->post_title); ?>
+                    <?= esc_html(nhl_get_post_display_title($post->ID)); ?>
                 </a>
             </h2>
 
@@ -667,7 +665,6 @@ add_action('nhl_daily_category_reset', function () {
     error_log('NHL: Daily category reset executed at ' . current_time('mysql'));
 });
 
-
 // 2️⃣ SCHEDULE THE EVENT
 function nhl_schedule_daily_reset()
 {
@@ -697,7 +694,6 @@ function nhl_schedule_daily_reset()
     );
 }
 
-
 // 3️⃣ ENSURE CRON EXISTS
 add_action('init', function () {
     if (!wp_next_scheduled('nhl_daily_category_reset')) {
@@ -705,14 +701,10 @@ add_action('init', function () {
     }
 });
 
-
 // 4️⃣ CLEANUP ON DEACTIVATION
 register_deactivation_hook(__FILE__, function () {
     wp_clear_scheduled_hook('nhl_daily_category_reset');
 });
-
-
-
 
 // Add settings field
 add_action('admin_init', function () {
@@ -737,3 +729,22 @@ add_action('admin_init', function () {
         'nhl_cron_section'
     );
 });
+
+/**
+ * Get post display title (ACF short title fallback)
+ */
+function nhl_get_post_display_title($post_id)
+{
+    // If ACF not available, fallback
+    if (!function_exists('get_field')) {
+        return get_the_title($post_id);
+    }
+
+    $short_title = get_field('short_title', $post_id);
+
+    if (!empty($short_title)) {
+        return $short_title;
+    }
+
+    return get_the_title($post_id);
+}
