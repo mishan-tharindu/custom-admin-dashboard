@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Custom Admin Dashboard
  * Description: A custom plugin to modify and clean up the WordPress admin dashboard. [wwmt_time_ago] or [wwmt_time_ago icon="clock"], [post_image_count], [date_weather], [wwmt_ad space_id="wwmt-advertisment-space-01"], [wwmt_ad space_id="wwmt-advertisment-space-02"], [wwmt_ad space_id="wwmt-advertisment-space-03"], [wwmt_ad space_id="wwmt-advertisment-space-04"], [wwmt_ad space_id="wwmt-advertisment-space-05"],[post_reactions]
- * Version: 2.1.1
+ * Version: 2.1.2
  * Author: TechM
  * Author URI: https://yourwebsite.com
  * Text Domain: custom-admin-dashboard
@@ -4204,3 +4204,9 @@ require_once plugin_dir_path(__FILE__) . 'event-media-manager/event-media-manage
 // ============================================================================
 
 require_once plugin_dir_path(__FILE__) . 'includes/block-author-restrictions.php';
+
+// ============================================================================
+// 55. CUSTOM FONTS FOR BLOCK EDITOR & FRONTEND
+// ============================================================================
+
+require_once plugin_dir_path(__FILE__) . 'includes/admin-editor-fonts.php';

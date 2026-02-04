@@ -6,12 +6,13 @@
     text-align: center; /* Captions usually look good centered */
     border-bottom: 2px solid #eee;
     padding-bottom: 10px;
+    font-family: 'MV Waheed - MyCustomFont', sans-serif !important;
 }
 .cad-photo-caption-block p {
     margin: 0;
     font-size: 14px;
     color: #666;
     font-style: italic; /* Italicize captions for emphasis */
-    font-family: 'Mt MV Waheed';
+    font-family: 'MV Waheed - MyCustomFont', sans-serif !important;
 }
 

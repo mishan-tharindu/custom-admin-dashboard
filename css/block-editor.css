@@ -14,9 +14,9 @@
 /* Post Title */
 .editor-post-title__input,
 h1.editor-post-title__input {
-    direction: rtl !important;
+    /* direction: rtl !important;
     text-align: right !important;
-    font-family: 'MV Bodu', 'Thamaan', sans-serif !important;
+    font-family: 'MV Bodu', 'Thamaan', sans-serif !important; */
 }
 
 /* Paragraph & Text Blocks */

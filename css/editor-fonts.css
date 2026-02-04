@@ -1,0 +1,40 @@
+@font-face {
+    font-family: 'Mv Bodu - MyCustomFont';
+    src: url('../fonts/MVBodu.otf') format('opentype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'MV Waheed - MyCustomFont';
+    src: url('../fonts/MVWaheed.otf') format('opentype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Easa Galan Hima  - MyCustomFont';
+    src: url('../fonts/EasaGalanHima.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* ===============================
+   APPLY TO HEADINGS (EDITOR)
+   =============================== */
+
+.editor-styles-wrapper h1,
+.editor-styles-wrapper h2,
+.editor-styles-wrapper h3,
+.editor-styles-wrapper h4,
+.editor-styles-wrapper h5,
+.editor-styles-wrapper h6 {
+    font-family: 'Mv Bodu - MyCustomFont', sans-serif;
+}
+
+.editor-styles-wrapper p {
+    font-family: 'Easa Galan Hima  - MyCustomFont', sans-serif;
+}

@@ -10,7 +10,7 @@
   "attributes": {
     "caption": {
       "type": "string",
-      "default": "Enter your caption text here..."
+      "default": ""
     }
   },
   "supports": {
