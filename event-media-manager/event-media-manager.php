@@ -2,7 +2,7 @@
 /*
 Plugin Name: Event Media Manager
 Description: Custom event-based media dashboard with image metadata and tags
-Version: 2.1.1
+Version: 2.2.0
 Author: MT
 */
 
@@ -36,8 +36,23 @@ add_action('init', function () {
         'query_var'         => true,
         'rewrite'           => ['slug' => 'media-tag'],
         'show_in_rest'      => true,
-        'show_in_quick_edit' => false, // Hide from quick edit
-        'meta_box_cb'       => false, // Hide default metabox in media modal
+        'show_in_quick_edit' => false,
+        'meta_box_cb'       => false,
+    ]);
+
+    // NEW: Register taxonomy to link images to multiple events
+    register_taxonomy('emm_event_link', 'attachment', [
+        'labels' => [
+            'name'          => 'Event Links',
+            'singular_name' => 'Event Link',
+        ],
+        'hierarchical'      => false,
+        'show_ui'           => false,
+        'show_admin_column' => false,
+        'query_var'         => false,
+        'rewrite'           => false,
+        'public'            => false,
+        'show_in_rest'      => false,
     ]);
 });
 
@@ -56,16 +71,6 @@ add_action('admin_menu', function () {
         'dashicons-format-gallery',
         6
     );
-
-    // // Tags Management Submenu
-    // add_submenu_page(
-    //     'emm-dashboard',
-    //     'Media Tags',
-    //     'Media Tags',
-    //     'edit_pages',
-    //     'emm-media-tags',
-    //     'emm_render_tags_page'
-    // );
 });
 
 /* =========================================================
@@ -82,14 +87,14 @@ add_action('admin_enqueue_scripts', function ($hook) {
         'emm-admin',
         plugin_dir_url(__FILE__) . 'assets/css/media-folders.css',
         [],
-        '1.1'
+        '1.2'
     );
 
     wp_enqueue_script(
         'emm-admin',
         plugin_dir_url(__FILE__) . 'assets/js/media-folders.js',
         ['jquery', 'jquery-ui-autocomplete'],
-        '1.1',
+        '1.2',
         true
     );
 
@@ -104,7 +109,6 @@ add_action('admin_enqueue_scripts', function ($hook) {
    3B. ENQUEUE AUTOCOMPLETE FOR MEDIA UPLOAD/EDIT
 ========================================================= */
 add_action('admin_enqueue_scripts', function ($hook) {
-    // Load on media upload/edit pages and all admin pages with media
     global $pagenow;
 
     if (
@@ -113,14 +117,12 @@ add_action('admin_enqueue_scripts', function ($hook) {
         isset($_GET['action']) && $_GET['action'] === 'edit'
     ) {
 
-        // Enqueue jQuery UI with autocomplete
         wp_enqueue_script('jquery-ui-core');
         wp_enqueue_script('jquery-ui-widget');
         wp_enqueue_script('jquery-ui-position');
         wp_enqueue_script('jquery-ui-menu');
         wp_enqueue_script('jquery-ui-autocomplete');
 
-        // Add jQuery UI CSS
         wp_enqueue_style(
             'jquery-ui-css',
             'https://code.jquery.com/ui/1.13.2/themes/smoothness/jquery-ui.css',
@@ -128,7 +130,6 @@ add_action('admin_enqueue_scripts', function ($hook) {
             '1.13.2'
         );
 
-        // Add custom CSS for autocomplete in media modal
         wp_add_inline_style('jquery-ui-css', '
             .ui-autocomplete {
                 max-height: 200px;
@@ -143,7 +144,6 @@ add_action('admin_enqueue_scripts', function ($hook) {
     }
 }, 5);
 
-// Also load for media frame/modal
 add_action('wp_enqueue_media', function () {
     wp_enqueue_script('jquery-ui-autocomplete');
     wp_enqueue_style(
@@ -154,15 +154,12 @@ add_action('wp_enqueue_media', function () {
     );
 });
 
-/* =========================================================
-   3B. LOAD JS ALSO FOR MEDIA MODAL
-========================================================= */
 add_action('wp_enqueue_media', function () {
     wp_enqueue_script(
         'emm-media-global',
         plugin_dir_url(__FILE__) . 'assets/js/media-folders.js',
         ['jquery'],
-        '1.1',
+        '1.2',
         true
     );
 });
@@ -225,14 +222,8 @@ function emm_render_event_grid()
 
             <?php foreach ($events as $event):
 
-                $images = get_posts([
-                    'post_type'      => 'attachment',
-                    'post_parent'    => $event->ID,
-                    'post_mime_type' => 'image',
-                    'posts_per_page' => -1,
-                    'fields'         => 'ids',
-                ]);
-
+                // Get images linked to this event via taxonomy
+                $images = emm_get_event_images($event->ID);
                 $count = count($images);
                 $cover_id = emm_get_event_cover($event->ID);
 
@@ -284,6 +275,30 @@ function emm_render_event_grid()
 }
 
 /* =========================================================
+   5B. HELPER — GET EVENT IMAGES (using taxonomy)
+========================================================= */
+function emm_get_event_images($event_id)
+{
+    $args = [
+        'post_type'      => 'attachment',
+        'post_mime_type' => 'image',
+        'posts_per_page' => -1,
+        'orderby'        => 'menu_order',
+        'order'          => 'ASC',
+        'fields'         => 'ids',
+        'tax_query'      => [
+            [
+                'taxonomy' => 'emm_event_link',
+                'field'    => 'slug',
+                'terms'    => 'event-' . $event_id,
+            ],
+        ],
+    ];
+
+    return get_posts($args);
+}
+
+/* =========================================================
    6. HANDLE CREATE EVENT
 ========================================================= */
 add_action('admin_init', function () {
@@ -315,14 +330,7 @@ function emm_render_event_view($event_id)
         return;
     }
 
-    $images = get_posts([
-        'post_type'      => 'attachment',
-        'post_parent'    => $event_id,
-        'post_mime_type' => 'image',
-        'posts_per_page' => -1,
-        'orderby'        => 'menu_order',
-        'order'          => 'ASC',
-    ]);
+    $images = emm_get_event_images($event_id);
 ?>
 
     <div class="emm-wrap">
@@ -358,15 +366,26 @@ function emm_render_event_view($event_id)
         </div>
 
         <div class="emm-grid">
-            <?php foreach ($images as $img):
-                $tags = wp_get_post_terms($img->ID, 'emm_media_tag', ['fields' => 'names']);
+            <?php foreach ($images as $img_id):
+                $tags = wp_get_post_terms($img_id, 'emm_media_tag', ['fields' => 'names']);
                 $tag_list = !empty($tags) ? implode(', ', $tags) : '';
+                
+                // Get all events this image belongs to
+                $linked_events = emm_get_image_events($img_id);
+                $event_count = count($linked_events);
             ?>
-                <div class="emm-card emm-image" data-id="<?php echo $img->ID; ?>">
-                    <?php echo wp_get_attachment_image($img->ID, 'medium'); ?>
-                    <button class="emm-remove" data-id="<?php echo $img->ID; ?>">✕</button>
-                    <button class="emm-edit-tags" style="display: none;" data-id="<?php echo $img->ID; ?>" title="Edit tags">🏷️</button>
-                    <p><?php echo esc_html($img->post_title); ?></p>
+                <div class="emm-card emm-image" data-id="<?php echo $img_id; ?>">
+                    <?php echo wp_get_attachment_image($img_id, 'medium'); ?>
+                    <button class="emm-remove" data-id="<?php echo $img_id; ?>" data-event="<?php echo $event_id; ?>">✕</button>
+                    <button class="emm-edit-tags" style="display: none;" data-id="<?php echo $img_id; ?>" title="Edit tags">🏷️</button>
+                    
+                    <?php if ($event_count > 1): ?>
+                        <span class="emm-multi-event-badge" title="This image is in <?php echo $event_count; ?> events">
+                            📁 <?php echo $event_count; ?>
+                        </span>
+                    <?php endif; ?>
+                    
+                    <p><?php echo esc_html(get_the_title($img_id)); ?></p>
                     <?php if ($tag_list): ?>
                         <div class="emm-tags-display"><?php echo esc_html($tag_list); ?></div>
                     <?php endif; ?>
@@ -389,11 +408,29 @@ function emm_render_event_view($event_id)
             <button class="button button-primary" id="emm-save-tags">Save Tags</button>
         </div>
     </div>
+
 <?php
 }
 
 /* =========================================================
-   8. MEDIA TAGS MANAGEMENT PAGE
+   7B. HELPER — GET IMAGE EVENTS
+========================================================= */
+function emm_get_image_events($image_id)
+{
+    $terms = wp_get_post_terms($image_id, 'emm_event_link', ['fields' => 'slugs']);
+    
+    $event_ids = [];
+    foreach ($terms as $slug) {
+        if (strpos($slug, 'event-') === 0) {
+            $event_ids[] = (int) str_replace('event-', '', $slug);
+        }
+    }
+    
+    return $event_ids;
+}
+
+/* =========================================================
+   8. MEDIA TAGS MANAGEMENT PAGE (keeping original)
 ========================================================= */
 function emm_render_tags_page()
 {
@@ -588,10 +625,9 @@ function emm_render_tags_page()
 }
 
 /* =========================================================
-   9. AJAX — ADD NEW TAG
+   9-14. TAG MANAGEMENT AJAX (keeping all original)
 ========================================================= */
 add_action('wp_ajax_emm_add_tag', function () {
-
     check_ajax_referer('emm_manage_tags', 'nonce');
 
     if (!current_user_can('edit_pages')) {
@@ -624,11 +660,7 @@ add_action('wp_ajax_emm_add_tag', function () {
     ]);
 });
 
-/* =========================================================
-   10. AJAX — UPDATE TAG
-========================================================= */
 add_action('wp_ajax_emm_update_tag', function () {
-
     if (!current_user_can('edit_pages')) {
         wp_send_json_error('Permission denied');
     }
@@ -651,11 +683,7 @@ add_action('wp_ajax_emm_update_tag', function () {
     wp_send_json_success();
 });
 
-/* =========================================================
-   11. AJAX — DELETE TAG
-========================================================= */
 add_action('wp_ajax_emm_delete_tag', function () {
-
     if (!current_user_can('edit_pages')) {
         wp_send_json_error('Permission denied');
     }
@@ -671,11 +699,7 @@ add_action('wp_ajax_emm_delete_tag', function () {
     wp_send_json_success();
 });
 
-/* =========================================================
-   12. AJAX — SEARCH TAGS (for autocomplete)
-========================================================= */
 add_action('wp_ajax_emm_search_tags', function () {
-
     $search = sanitize_text_field($_POST['search']);
 
     $tags = get_terms([
@@ -695,11 +719,7 @@ add_action('wp_ajax_emm_search_tags', function () {
     wp_send_json_success($results);
 });
 
-/* =========================================================
-   13. AJAX — GET IMAGE TAGS
-========================================================= */
 add_action('wp_ajax_emm_get_image_tags', function () {
-
     $image_id = (int) $_POST['image_id'];
 
     $tags = wp_get_post_terms($image_id, 'emm_media_tag');
@@ -714,11 +734,7 @@ add_action('wp_ajax_emm_get_image_tags', function () {
     wp_send_json_success($results);
 });
 
-/* =========================================================
-   14. AJAX — SAVE IMAGE TAGS
-========================================================= */
 add_action('wp_ajax_emm_save_image_tags', function () {
-
     check_ajax_referer('emm_nonce', 'nonce');
 
     if (!current_user_can('upload_files')) {
@@ -728,7 +744,6 @@ add_action('wp_ajax_emm_save_image_tags', function () {
     $image_id = (int) $_POST['image_id'];
     $tag_ids  = array_map('intval', $_POST['tag_ids'] ?? []);
 
-    // IMPORTANT: use object terms for attachments
     $result = wp_set_object_terms(
         $image_id,
         $tag_ids,
@@ -743,11 +758,6 @@ add_action('wp_ajax_emm_save_image_tags', function () {
     wp_send_json_success();
 });
 
-
-/* =========================================================
-   14B. AJAX — SAVE ATTACHMENT (for media modal)
-   FIXED VERSION - Properly saves tags from media modal
-========================================================= */
 add_action('wp_ajax_save-attachment-compat', 'emm_ajax_save_attachment_compat', 0);
 function emm_ajax_save_attachment_compat()
 {
@@ -761,32 +771,27 @@ function emm_ajax_save_attachment_compat()
         return;
     }
 
-    // IMPORTANT: Only run when OUR field exists
     if (!isset($_REQUEST['attachments'][$id]['emm_media_tags'])) {
         return;
     }
 
     $tag_ids_string = sanitize_text_field($_REQUEST['attachments'][$id]['emm_media_tags']);
 
-    // Handle empty tags
     if ($tag_ids_string === '' || trim($tag_ids_string) === '') {
         wp_set_object_terms($id, [], 'emm_media_tag', false);
         clean_object_term_cache($id, 'attachment');
         return;
     }
 
-    // Split by comma and clean up - these are now tag IDs
     $tag_ids = array_map('intval', array_filter(explode(',', $tag_ids_string)));
 
     if (!empty($tag_ids)) {
-        // Set the terms by ID
         $result = wp_set_object_terms($id, $tag_ids, 'emm_media_tag', false);
 
         if (is_wp_error($result)) {
             error_log('EMM Tag Save Error: ' . $result->get_error_message());
         }
 
-        // Force clean the cache to ensure changes are visible
         clean_object_term_cache($id, 'attachment');
     } else {
         wp_set_object_terms($id, [], 'emm_media_tag', false);
@@ -794,9 +799,6 @@ function emm_ajax_save_attachment_compat()
     }
 }
 
-/* =========================================================
-   14C. AJAX — SAVE ATTACHMENT TAGS (direct save)
-========================================================= */
 add_action('wp_ajax_emm_save_attachment_tags', function () {
     if (!current_user_can('upload_files')) {
         wp_send_json_error('Permission denied');
@@ -805,22 +807,17 @@ add_action('wp_ajax_emm_save_attachment_tags', function () {
     $attachment_id = (int) $_POST['attachment_id'];
     $tag_ids = isset($_POST['tag_ids']) ? array_map('intval', (array)$_POST['tag_ids']) : [];
 
-    // Set the terms
     $result = wp_set_object_terms($attachment_id, $tag_ids, 'emm_media_tag', false);
 
     if (is_wp_error($result)) {
         wp_send_json_error($result->get_error_message());
     }
 
-    // Clean cache
     clean_object_term_cache($attachment_id, 'attachment');
 
     wp_send_json_success();
 });
 
-/* =========================================================
-   14D. AJAX — SAVE ATTACHMENT TAGS WITH NEW TAG CREATION
-========================================================= */
 add_action('wp_ajax_emm_save_attachment_tags_with_new', function () {
     if (!current_user_can('upload_files')) {
         wp_send_json_error('Permission denied');
@@ -833,22 +830,18 @@ add_action('wp_ajax_emm_save_attachment_tags_with_new', function () {
     $all_tag_ids = $existing_tag_ids;
     $created_tags = [];
 
-    // Create new tags if any
     foreach ($new_tag_names as $tag_name) {
         if (empty($tag_name)) continue;
 
-        // Check if tag already exists (case-insensitive)
         $existing_term = get_term_by('name', $tag_name, 'emm_media_tag');
 
         if ($existing_term) {
-            // Tag already exists, use it
             $all_tag_ids[] = $existing_term->term_id;
             $created_tags[] = [
                 'id' => $existing_term->term_id,
                 'name' => $existing_term->name
             ];
         } else {
-            // Create new tag
             $result = wp_insert_term($tag_name, 'emm_media_tag');
 
             if (!is_wp_error($result)) {
@@ -861,14 +854,12 @@ add_action('wp_ajax_emm_save_attachment_tags_with_new', function () {
         }
     }
 
-    // Set all terms to the attachment
     $result = wp_set_object_terms($attachment_id, $all_tag_ids, 'emm_media_tag', false);
 
     if (is_wp_error($result)) {
         wp_send_json_error($result->get_error_message());
     }
 
-    // Clean cache
     clean_object_term_cache($attachment_id, 'attachment');
 
     wp_send_json_success([
@@ -876,19 +867,12 @@ add_action('wp_ajax_emm_save_attachment_tags_with_new', function () {
     ]);
 });
 
-
 /* =========================================================
    15. HELPER — GET EVENT TAGS OPTIONS
 ========================================================= */
 function emm_get_event_tags_options($event_id)
 {
-    $images = get_posts([
-        'post_type'      => 'attachment',
-        'post_parent'    => $event_id,
-        'post_mime_type' => 'image',
-        'posts_per_page' => -1,
-        'fields'         => 'ids',
-    ]);
+    $images = emm_get_event_images($event_id);
 
     if (!$images) return '';
 
@@ -925,7 +909,6 @@ function emm_get_event_tags_options($event_id)
    16. AJAX — FILTER IMAGES BY TAG
 ========================================================= */
 add_action('wp_ajax_emm_filter_by_tag', function () {
-
     if (!current_user_can('upload_files')) {
         wp_die();
     }
@@ -934,15 +917,7 @@ add_action('wp_ajax_emm_filter_by_tag', function () {
     $tag_id = (int) ($_POST['tag_id'] ?? 0);
     $photographer = (int) ($_POST['photographer'] ?? 0);
 
-    $images = get_posts([
-        'post_type'      => 'attachment',
-        'post_parent'    => $event_id,
-        'post_mime_type' => 'image',
-        'posts_per_page' => -1,
-        'orderby'        => 'menu_order',
-        'order'          => 'ASC',
-        'fields'         => 'ids',
-    ]);
+    $images = emm_get_event_images($event_id);
 
     foreach ($images as $img_id) {
 
@@ -964,11 +939,18 @@ add_action('wp_ajax_emm_filter_by_tag', function () {
 
         $tags = wp_get_post_terms($img_id, 'emm_media_tag', ['fields' => 'names']);
         $tag_list = !empty($tags) ? implode(', ', $tags) : '';
+        
+        $linked_events = emm_get_image_events($img_id);
+        $event_count = count($linked_events);
 
         echo '<div class="emm-card emm-image" data-id="' . esc_attr($img_id) . '">';
         echo wp_get_attachment_image($img_id, 'medium');
-        echo '<button class="emm-remove" data-id="' . esc_attr($img_id) . '">✕</button>';
-        // echo '<button class="emm-edit-tags" data-id="' . esc_attr($img_id) . '" title="Edit tags">🏷️</button>';
+        echo '<button class="emm-remove" data-id="' . esc_attr($img_id) . '" data-event="' . esc_attr($event_id) . '">✕</button>';
+        
+        if ($event_count > 1) {
+            echo '<span class="emm-multi-event-badge" title="This image is in ' . $event_count . ' events">📁 ' . $event_count . '</span>';
+        }
+        
         echo '<p>' . esc_html(get_the_title($img_id)) . '</p>';
         if ($tag_list) {
             echo '<div class="emm-tags-display">' . esc_html($tag_list) . '</div>';
@@ -980,24 +962,56 @@ add_action('wp_ajax_emm_filter_by_tag', function () {
 });
 
 /* =========================================================
-   EXISTING FUNCTIONS (keeping all original functionality)
+   NEW: AJAX — ATTACH IMAGES TO EVENT (using taxonomy)
 ========================================================= */
-
 add_action('wp_ajax_emm_attach_images', function () {
     if (!current_user_can('upload_files')) {
         wp_send_json_error();
     }
+    
     $event_id = (int) $_POST['event_id'];
     $files = $_POST['files'] ?? [];
+    
     foreach ($files as $id) {
-        wp_update_post([
-            'ID' => (int) $id,
-            'post_parent' => $event_id
-        ]);
+        $image_id = (int) $id;
+        
+        // Add event link term
+        wp_set_object_terms(
+            $image_id,
+            'event-' . $event_id,
+            'emm_event_link',
+            true // Append, don't replace
+        );
     }
+    
     wp_send_json_success();
 });
 
+/* =========================================================
+   NEW: AJAX — REMOVE IMAGE FROM EVENT (not delete, just unlink)
+========================================================= */
+add_action('wp_ajax_emm_remove_image', function () {
+    if (!current_user_can('upload_files')) {
+        wp_send_json_error();
+    }
+    
+    $image_id = (int) $_POST['image_id'];
+    $event_id = (int) ($_POST['event_id'] ?? 0);
+    
+    if ($event_id) {
+        // Remove only this event link
+        wp_remove_object_terms($image_id, 'event-' . $event_id, 'emm_event_link');
+    } else {
+        // Remove all event links (legacy support)
+        wp_set_object_terms($image_id, [], 'emm_event_link', false);
+    }
+    
+    wp_send_json_success();
+});
+
+/* =========================================================
+   EXISTING FUNCTIONS (keeping all)
+========================================================= */
 if (function_exists('acf_add_local_field_group')) :
     acf_add_local_field_group([
         'key' => 'group_emm_image_meta',
@@ -1043,20 +1057,7 @@ if (function_exists('acf_add_local_field_group')) :
     ]);
 endif;
 
-// Add Media Tags field to attachment edit screen
 add_filter('attachment_fields_to_edit', 'emm_add_tags_field_to_attachment', 10, 2);
-
-add_action('wp_ajax_emm_remove_image', function () {
-    if (!current_user_can('upload_files')) {
-        wp_send_json_error();
-    }
-    $image_id = (int) $_POST['image_id'];
-    wp_update_post([
-        'ID' => $image_id,
-        'post_parent' => 0
-    ]);
-    wp_send_json_success();
-});
 
 add_action('wp_ajax_emm_delete_event', function () {
     if (!current_user_can('upload_files')) {
@@ -1066,19 +1067,18 @@ add_action('wp_ajax_emm_delete_event', function () {
     if (!$event_id) {
         wp_send_json_error('Invalid event');
     }
-    $images = get_posts([
-        'post_type'      => 'attachment',
-        'post_parent'    => $event_id,
-        'posts_per_page' => -1,
-        'fields'         => 'ids',
-    ]);
+    
+    // Get all images linked to this event
+    $images = emm_get_event_images($event_id);
+    
+    // Remove event link from each image
     foreach ($images as $img_id) {
-        wp_update_post([
-            'ID'          => $img_id,
-            'post_parent' => 0,
-        ]);
+        wp_remove_object_terms($img_id, 'event-' . $event_id, 'emm_event_link');
     }
+    
+    // Delete the event post
     wp_delete_post($event_id, true);
+    
     wp_send_json_success();
 });
 
@@ -1161,15 +1161,9 @@ add_action('wp_ajax_emm_filter_images', function () {
     }
     $event_id     = (int) $_POST['event_id'];
     $photographer = (int) ($_POST['photographer'] ?? 0);
-    $images = get_posts([
-        'post_type'      => 'attachment',
-        'post_parent'    => $event_id,
-        'post_mime_type' => 'image',
-        'posts_per_page' => -1,
-        'orderby'        => 'menu_order',
-        'order'          => 'ASC',
-        'fields'         => 'ids',
-    ]);
+    
+    $images = emm_get_event_images($event_id);
+    
     foreach ($images as $img_id) {
         $img_photographer = (int) get_post_meta($img_id, 'photographer', true);
         if ($photographer && $img_photographer !== $photographer) {
@@ -1177,10 +1171,18 @@ add_action('wp_ajax_emm_filter_images', function () {
         }
         $tags = wp_get_post_terms($img_id, 'emm_media_tag', ['fields' => 'names']);
         $tag_list = !empty($tags) ? implode(', ', $tags) : '';
+        
+        $linked_events = emm_get_image_events($img_id);
+        $event_count = count($linked_events);
+        
         echo '<div class="emm-card emm-image" data-id="' . esc_attr($img_id) . '">';
         echo wp_get_attachment_image($img_id, 'medium');
-        echo '<button class="emm-remove" data-id="' . esc_attr($img_id) . '">✕</button>';
-        // echo '<button class="emm-edit-tags" data-id="' . esc_attr($img_id) . '" title="Edit tags">🏷️</button>';
+        echo '<button class="emm-remove" data-id="' . esc_attr($img_id) . '" data-event="' . esc_attr($event_id) . '">✕</button>';
+        
+        if ($event_count > 1) {
+            echo '<span class="emm-multi-event-badge" title="This image is in ' . $event_count . ' events">📁 ' . $event_count . '</span>';
+        }
+        
         echo '<p>' . esc_html(get_the_title($img_id)) . '</p>';
         if ($tag_list) {
             echo '<div class="emm-tags-display">' . esc_html($tag_list) . '</div>';
@@ -1192,13 +1194,7 @@ add_action('wp_ajax_emm_filter_images', function () {
 
 function emm_get_event_photographers($event_id)
 {
-    $images = get_posts([
-        'post_type'      => 'attachment',
-        'post_parent'    => $event_id,
-        'post_mime_type' => 'image',
-        'posts_per_page' => -1,
-        'fields'         => 'ids',
-    ]);
+    $images = emm_get_event_images($event_id);
     if (!$images) return '';
     $photographer_ids = [];
     foreach ($images as $img_id) {
@@ -1224,11 +1220,10 @@ function emm_get_event_photographers($event_id)
 }
 
 /* =========================================================
-   ADD MEDIA TAGS FIELD TO ATTACHMENT EDIT
+   ADD MEDIA TAGS FIELD TO ATTACHMENT EDIT (keeping original)
 ========================================================= */
 function emm_add_tags_field_to_attachment($form_fields, $post)
 {
-    // Get current tags
     $tags = wp_get_post_terms($post->ID, 'emm_media_tag');
     $tag_ids = array_map(function ($tag) {
         return $tag->term_id;
@@ -1238,7 +1233,6 @@ function emm_add_tags_field_to_attachment($form_fields, $post)
         return $tag->name;
     }, $tags);
 
-    // Get all available tags for autocomplete
     $all_tags = get_terms([
         'taxonomy'   => 'emm_media_tag',
         'hide_empty' => false,
@@ -1248,7 +1242,6 @@ function emm_add_tags_field_to_attachment($form_fields, $post)
         return ['id' => $tag->term_id, 'name' => $tag->name];
     }, $all_tags);
 
-    // Create unique ID for this field
     $field_id = 'emm-media-tags-' . $post->ID;
     $attachment_id = $post->ID;
 
@@ -1323,7 +1316,6 @@ function emm_add_tags_field_to_attachment($form_fields, $post)
             return ['id' => $t->term_id, 'name' => $t->name, 'isNew' => false];
         }, $tags)) . ';
                 
-                // Render tag badges
                 function renderBadges() {
                     if (selectedTags.length === 0) {
                         $(badgesId).html("<em style=\"color: #999;\">No tags selected</em>");
@@ -1339,7 +1331,6 @@ function emm_add_tags_field_to_attachment($form_fields, $post)
                         $(badgesId).html(html);
                     }
                     
-                    // Update hidden field with tag IDs (only existing tags)
                     var tagIds = selectedTags.filter(function(tag) { 
                         return !tag.isNew; 
                     }).map(function(tag) { 
@@ -1348,7 +1339,6 @@ function emm_add_tags_field_to_attachment($form_fields, $post)
                     $(hiddenId).val(tagIds.join(","));
                 }
                 
-                // Remove tag badge on click
                 $(document).on("click", ".emm-tag-badge-remove", function(e) {
                     e.preventDefault();
                     var tagId = $(this).data("tag-id");
@@ -1358,7 +1348,6 @@ function emm_add_tags_field_to_attachment($form_fields, $post)
                     renderBadges();
                 });
                 
-                // Save tags via AJAX
                 function saveTags() {
                     var $btn = $(".emm-save-tags-btn[data-attachment-id=\"" + attachmentId + "\"]");
                     var btnText = $btn.html();
@@ -1366,7 +1355,6 @@ function emm_add_tags_field_to_attachment($form_fields, $post)
                     $btn.prop("disabled", true).html("💾 Saving...");
                     $(statusId).hide();
                     
-                    // Separate existing and new tags
                     var existingTagIds = selectedTags
                         .filter(function(tag) { return !tag.isNew; })
                         .map(function(tag) { return tag.id; });
@@ -1382,7 +1370,6 @@ function emm_add_tags_field_to_attachment($form_fields, $post)
                         new_tag_names: newTagNames
                     }, function(response) {
                         if (response.success) {
-                            // Update selected tags with the new IDs from server
                             if (response.data.created_tags) {
                                 response.data.created_tags.forEach(function(createdTag) {
                                     var tagIndex = selectedTags.findIndex(function(t) {
@@ -1397,7 +1384,6 @@ function emm_add_tags_field_to_attachment($form_fields, $post)
                                     }
                                 });
                                 
-                                // Add new tags to available tags
                                 response.data.created_tags.forEach(function(createdTag) {
                                     availableTags.push({
                                         id: createdTag.id,
@@ -1407,8 +1393,7 @@ function emm_add_tags_field_to_attachment($form_fields, $post)
                             }
                             
                             renderBadges();
-                                // 🔥 FORCE MEDIA MODAL REFRESH
-                                emmRefreshAttachment(attachmentId);
+                            emmRefreshAttachment(attachmentId);
                             $(statusId).fadeIn().delay(2000).fadeOut();
                         } else {
                             alert("Error saving tags: " + (response.data || "Unknown error"));
@@ -1420,7 +1405,6 @@ function emm_add_tags_field_to_attachment($form_fields, $post)
                     });
                 }
                 
-                // Save button click
                 $(document).on("click", ".emm-save-tags-btn", function(e) {
                     e.preventDefault();
                     if ($(this).data("attachment-id") === attachmentId) {
@@ -1428,7 +1412,6 @@ function emm_add_tags_field_to_attachment($form_fields, $post)
                     }
                 });
                 
-                // Get available tags (exclude already selected)
                 function getAvailableTags() {
                     return availableTags.filter(function(tag) {
                         return !selectedTags.some(function(selected) {
@@ -1437,7 +1420,6 @@ function emm_add_tags_field_to_attachment($form_fields, $post)
                     });
                 }
                 
-                // Initialize autocomplete
                 if (typeof $.ui !== "undefined" && typeof $.ui.autocomplete !== "undefined") {
                     $(fieldId).autocomplete({
                         minLength: 0,
@@ -1453,7 +1435,6 @@ function emm_add_tags_field_to_attachment($form_fields, $post)
                                 return { label: tag.name, value: tag.name, id: tag.id, isNew: false };
                             });
                             
-                            // Add "Create new tag" option if term is not empty and not an exact match
                             if (term && !matches.some(function(tag) { 
                                 return tag.name.toLowerCase() === term; 
                             })) {
@@ -1470,7 +1451,6 @@ function emm_add_tags_field_to_attachment($form_fields, $post)
                         select: function(event, ui) {
                             event.preventDefault();
                             
-                            // Add tag if not already selected
                             if (!selectedTags.some(function(tag) { 
                                 return tag.name.toLowerCase() === ui.item.value.toLowerCase(); 
                             })) {
@@ -1490,13 +1470,11 @@ function emm_add_tags_field_to_attachment($form_fields, $post)
                         }
                     });
                     
-                    // Show all suggestions on focus
                     $(fieldId).on("focus", function() {
                         $(this).autocomplete("search", $(this).val());
                     });
                 }
                 
-                // Initial render
                 renderBadges();
             });
             
@@ -1508,7 +1486,6 @@ function emm_add_tags_field_to_attachment($form_fields, $post)
     return $form_fields;
 }
 
-// Helper function to render tag badges
 function emm_render_tag_badges($tags)
 {
     if (empty($tags)) {
@@ -1525,8 +1502,6 @@ function emm_render_tag_badges($tags)
     return $html;
 }
 
-
-// Ensure 'emm_media_tag' taxonomy is associated with 'attachment' post type
 add_action('init', function () {
     register_taxonomy_for_object_type('emm_media_tag', 'attachment');
 }, 20);

@@ -1,7 +1,7 @@
 jQuery(document).ready(function ($) {
 
     /* =========================================================
-       EXISTING FUNCTIONALITY - Event Search, Upload, Delete etc.
+       Event Search, Upload, Delete etc.
     ========================================================= */
 
     // Event search
@@ -37,19 +37,21 @@ jQuery(document).ready(function ($) {
         frame.open();
     });
 
-    // Remove image from event
+    // UPDATED: Remove image from event (not delete, just unlink)
     $(document).on('click', '.emm-remove', function (e) {
         e.preventDefault();
         e.stopPropagation();
 
-        if (!confirm('Remove this image from the event?')) return;
+        if (!confirm('Remove this image from this event?')) return;
 
         const imageId = $(this).data('id');
+        const eventId = $(this).data('event');
         const $card = $(this).closest('.emm-image');
 
         $.post(ajaxurl, {
             action: 'emm_remove_image',
-            image_id: imageId
+            image_id: imageId,
+            event_id: eventId
         }, () => $card.fadeOut(300, () => $card.remove()));
     });
 
@@ -161,7 +163,7 @@ jQuery(document).ready(function ($) {
     });
 
     /* =========================================================
-       NEW TAG FUNCTIONALITY
+       TAG FUNCTIONALITY
     ========================================================= */
 
     // Filter by tag
@@ -537,6 +539,7 @@ jQuery(document).ready(function ($) {
 
 });
 
+// Media modal refresh function
 (function ($) {
 
     if (typeof wp === 'undefined' || !wp.media) return;
@@ -549,12 +552,12 @@ jQuery(document).ready(function ($) {
         attachment.fetch({
             success: function (model, response) {
 
-                // ✅ Update compat silently (prevents validation crash)
+                // Update compat silently (prevents validation crash)
                 if (response && response.compat) {
                     model.set('compat', response.compat, { silent: true });
                 }
 
-                // ✅ Safely re-render sidebar (no Backbone validation)
+                // Safely re-render sidebar (no Backbone validation)
                 if (wp.media.frame && wp.media.frame.content) {
                     wp.media.frame.content.render();
                 }
