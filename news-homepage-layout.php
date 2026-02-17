@@ -38,11 +38,15 @@ class News_Homepage_Layout
 
             if (!empty($old)) {
                 delete_post_meta($old[0]->ID, $slot_key);
+                nhl_flush_post_cache($old[0]->ID);
             }
 
             // Assign new post to slot
             delete_post_meta($post_id, $slot_key);
             update_post_meta($post_id, $slot_key, $slot);
+
+            nhl_flush_post_cache($post_id);
+            nhl_bump_layout_version();
 
             wp_send_json_success();
         });
@@ -62,7 +66,10 @@ class News_Homepage_Layout
             // Clear all existing slots
             foreach ($posts as $p) {
                 delete_post_meta($p->ID, 'news_slot');
+                clean_post_cache($p->ID);
             }
+
+            wp_cache_flush();
 
             // Assign defaults
             if (!empty($posts)) {
@@ -79,6 +86,9 @@ class News_Homepage_Layout
                     }
                 }
             }
+            
+            nhl_bump_layout_version();
+
 
             wp_send_json_success([
                 'message' => 'News layout reset to default'
@@ -95,6 +105,9 @@ class News_Homepage_Layout
             $slot_key = $category . '_slot';
 
             delete_post_meta($post_id, $slot_key);
+
+            nhl_flush_post_cache($post_id);
+            nhl_bump_layout_version();
 
 
             wp_send_json_success();
@@ -115,7 +128,8 @@ class News_Homepage_Layout
 
             // Make ajax_url available on frontend too
             wp_localize_script('nhl-news-frontend', 'nhl_ajax', [
-                'ajax_url' => admin_url('admin-ajax.php')
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'layout_version' => (int) get_option('nhl_layout_version', 1),
             ]);
         });
 
@@ -135,6 +149,7 @@ class News_Homepage_Layout
 
             foreach ($posts as $p) {
                 delete_post_meta($p->ID, $slot_key);
+                nhl_flush_post_cache($p->ID);
             }
 
             if (!empty($posts)) {
@@ -150,6 +165,7 @@ class News_Homepage_Layout
                 }
             }
 
+            nhl_bump_layout_version();
             wp_send_json_success();
         });
     }
@@ -317,7 +333,10 @@ class News_Homepage_Layout
                     'category_name' => $cat,
                     'meta_key'      => $slot_key,
                     'meta_value'    => $slot,
-                    'numberposts'   => 1
+                    'numberposts'   => 1,
+                    'cache_results' => false,
+                    'update_post_meta_cache' => false,
+                    'update_post_term_cache' => false,
                 ]);
 
                 echo "<ul class='nhl-drop' data-slot='{$slot}'>";
@@ -350,7 +369,10 @@ class News_Homepage_Layout
                 'category_name' => $cat,
                 'meta_key'      => $slot_key,
                 'meta_value'    => 'featured',
-                'numberposts'   => 1
+                'numberposts'   => 1,
+                'cache_results' => false,
+                'update_post_meta_cache' => false,
+                'update_post_term_cache' => false,
             ]);
 
             echo "
@@ -395,7 +417,10 @@ class News_Homepage_Layout
                         'compare' => 'NOT IN'
                     ],
                 ],
-                'numberposts' => -1
+                'numberposts' => -1,
+                'cache_results' => false,
+                'update_post_meta_cache' => false,
+                'update_post_term_cache' => false,
             ]);
 
             // Sort by grid position if exists
@@ -481,6 +506,7 @@ class News_Homepage_Layout
                 'meta_value_num' => 'ASC',
                 'date'           => 'DESC'
             ],
+            'cache_results' => false,
         ]);
 
         if (!$query->have_posts()) {
@@ -521,9 +547,11 @@ class News_Homepage_Layout
         if (!empty($order)) {
             foreach ($order as $position => $post_id) {
                 update_post_meta((int)$post_id, $grid_key, $position);
+                nhl_flush_post_cache((int)$post_id);
             }
         }
 
+        nhl_bump_layout_version();
         wp_send_json_success();
     }
 }
@@ -747,4 +775,30 @@ function nhl_get_post_display_title($post_id)
     }
 
     return get_the_title($post_id);
+}
+
+/* =====================================================
+   CACHE HELPERS
+===================================================== */
+
+function nhl_flush_post_cache($post_id)
+{
+    clean_post_cache($post_id);
+    wp_cache_delete($post_id, 'posts');
+}
+
+function nhl_bump_layout_version()
+{
+    update_option('nhl_layout_version', time());
+}
+
+
+add_action('wp_ajax_nhl_get_layout_version', 'nhl_get_layout_version');
+add_action('wp_ajax_nopriv_nhl_get_layout_version', 'nhl_get_layout_version');
+
+function nhl_get_layout_version()
+{
+    wp_send_json([
+        'version' => (int) get_option('nhl_layout_version', 1)
+    ]);
 }
