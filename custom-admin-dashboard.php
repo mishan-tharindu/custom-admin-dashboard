@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Custom Admin Dashboard
  * Description: A custom plugin to modify and clean up the WordPress admin dashboard. [wwmt_time_ago] or [wwmt_time_ago icon="clock"], [post_image_count], [date_weather], [wwmt_ad space_id="wwmt-advertisment-space-01"], [wwmt_ad space_id="wwmt-advertisment-space-02"], [wwmt_ad space_id="wwmt-advertisment-space-03"], [wwmt_ad space_id="wwmt-advertisment-space-04"], [wwmt_ad space_id="wwmt-advertisment-space-05"],[post_reactions]
- * Version: 2.1.7
+ * Version: 2.2.1
  * Author: TechM
  * Author URI: https://yourwebsite.com
  * Text Domain: custom-admin-dashboard
@@ -3433,50 +3433,54 @@ add_shortcode('news_home_layout', function ($atts) {
     ========================= */
     ob_start(); ?>
 
-    <div class="news-layout" data-category="<?= esc_attr($category); ?>">
 
-        <div class="news-hero">
+    <div class="nhl-home-layout" data-category="<?= esc_attr($category); ?>">
+        <div class="news-layout" >
 
-            <!-- TOP STORIES -->
-            <div class="news-top-grid">
-                <?php foreach ($tops as $p) : ?>
-                    <?= nhl_post_card($p, false); ?>
-                <?php endforeach; ?>
+            <div class="news-hero">
+
+                <!-- TOP STORIES -->
+                <div class="news-top-grid">
+                    <?php foreach ($tops as $p) : ?>
+                        <?= nhl_post_card($p, false); ?>
+                    <?php endforeach; ?>
+                </div>
+
+                <!-- FEATURED -->
+                <div class="news-featured">
+                    <?php if (!empty($featured)) {
+                        echo nhl_post_card($featured[0], true);
+                    } ?>
+                </div>
+
             </div>
 
-            <!-- FEATURED -->
-            <div class="news-featured">
-                <?php if (!empty($featured)) {
-                    echo nhl_post_card($featured[0], true);
-                } ?>
+            <!-- GRID -->
+            <div class="news-grid">
+                <?php
+                $loaded_ids = [];
+
+                if ($grid->have_posts()) :
+                    while ($grid->have_posts()) : $grid->the_post();
+                        $loaded_ids[] = get_the_ID();
+                        echo nhl_post_card(get_post(), false);
+                    endwhile;
+                    wp_reset_postdata();
+                endif;
+
+                ?>
             </div>
 
+            <button
+                class="news-load-more"
+                data-category="<?= esc_attr($category); ?>"
+                data-loaded='<?= esc_attr(json_encode($loaded_ids)); ?>'>
+                Load More
+            </button>
+
+
+
         </div>
-
-        <!-- GRID -->
-        <div class="news-grid">
-            <?php
-            $loaded_ids = [];
-
-            if ($grid->have_posts()) :
-                while ($grid->have_posts()) : $grid->the_post();
-                    $loaded_ids[] = get_the_ID();
-                    echo nhl_post_card(get_post(), false);
-                endwhile;
-                wp_reset_postdata();
-            endif;
-
-            ?>
-        </div>
-
-        <button
-            class="news-load-more"
-            data-category="<?= esc_attr($category); ?>"
-            data-loaded='<?= esc_attr(json_encode($loaded_ids)); ?>'>
-            Load More
-        </button>
-
-
 
     </div>
 

@@ -46,7 +46,7 @@ class News_Homepage_Layout
             update_post_meta($post_id, $slot_key, $slot);
 
             nhl_flush_post_cache($post_id);
-            nhl_bump_layout_version();
+            nhl_bump_layout_version($category);
 
             wp_send_json_success();
         });
@@ -86,8 +86,8 @@ class News_Homepage_Layout
                     }
                 }
             }
-            
-            nhl_bump_layout_version();
+
+            nhl_bump_layout_version('news');
 
 
             wp_send_json_success([
@@ -107,7 +107,7 @@ class News_Homepage_Layout
             delete_post_meta($post_id, $slot_key);
 
             nhl_flush_post_cache($post_id);
-            nhl_bump_layout_version();
+            nhl_bump_layout_version($category);
 
 
             wp_send_json_success();
@@ -127,9 +127,11 @@ class News_Homepage_Layout
             );
 
             // Make ajax_url available on frontend too
+            $data = get_option('nhl_layout_version', []);
+
             wp_localize_script('nhl-news-frontend', 'nhl_ajax', [
-                'ajax_url' => admin_url('admin-ajax.php'),
-                'layout_version' => (int) get_option('nhl_layout_version', 1),
+                'ajax_url'      => admin_url('admin-ajax.php'),
+                'layout_version' => (int) ($data['version'] ?? 0),
             ]);
         });
 
@@ -165,7 +167,7 @@ class News_Homepage_Layout
                 }
             }
 
-            nhl_bump_layout_version();
+            nhl_bump_layout_version($category);
             wp_send_json_success();
         });
     }
@@ -551,7 +553,7 @@ class News_Homepage_Layout
             }
         }
 
-        nhl_bump_layout_version();
+        nhl_bump_layout_version($category);
         wp_send_json_success();
     }
 }
@@ -787,10 +789,16 @@ function nhl_flush_post_cache($post_id)
     wp_cache_delete($post_id, 'posts');
 }
 
-function nhl_bump_layout_version()
+function nhl_bump_layout_version($category = '')
 {
-    update_option('nhl_layout_version', time());
+    $data = [
+        'version'  => time(),
+        'category' => $category
+    ];
+
+    update_option('nhl_layout_version', $data);
 }
+
 
 
 add_action('wp_ajax_nhl_get_layout_version', 'nhl_get_layout_version');
@@ -798,7 +806,42 @@ add_action('wp_ajax_nopriv_nhl_get_layout_version', 'nhl_get_layout_version');
 
 function nhl_get_layout_version()
 {
+    $data = get_option('nhl_layout_version', []);
+
     wp_send_json([
-        'version' => (int) get_option('nhl_layout_version', 1)
+        'version'  => $data['version']  ?? 0,
+        'category' => $data['category'] ?? ''
+    ]);
+}
+
+// =====================================================
+// PARTIAL REFRESH — RENDER HOMEPAGE LAYOUT (AJAX)
+// =====================================================
+
+add_action('wp_ajax_nhl_render_home_layout', 'nhl_render_home_layout');
+add_action('wp_ajax_nopriv_nhl_render_home_layout', 'nhl_render_home_layout');
+
+function nhl_render_home_layout()
+{
+    // Never cache this response
+    nocache_headers();
+
+    // Get category (default = news)
+    $category = isset($_POST['category'])
+        ? sanitize_text_field($_POST['category'])
+        : 'news';
+
+    ob_start();
+
+    // 🔥 RENDER THE SAME SHORTCODE USED ON HOMEPAGE
+    echo do_shortcode('[news_home_layout category="' . esc_attr($category) . '"]');
+
+    $html = ob_get_clean();
+
+    $data = get_option('nhl_layout_version', []);
+
+    wp_send_json([
+        'html'    => $html,
+        'version' => (int) ($data['version'] ?? 0),
     ]);
 }

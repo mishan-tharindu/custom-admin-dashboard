@@ -42,6 +42,41 @@ jQuery(document).ready(function ($) {
 (function ($) {
 
     let CURRENT_VERSION = parseInt(nhl_ajax.layout_version || 0);
+    let IS_REFRESHING = false;
+
+    function refreshHomeLayout(category) {
+
+        if (IS_REFRESHING) return;
+        IS_REFRESHING = true;
+
+        $.post(nhl_ajax.ajax_url, {
+            action: 'nhl_render_home_layout',
+            category: category
+        }, function (res) {
+
+            if (!res || !res.html) {
+                IS_REFRESHING = false;
+                return;
+            }
+
+            $('.nhl-home-layout').each(function () {
+
+                let $block = $(this);
+                let blockCategory = $block.data('category');
+
+                if (blockCategory === category) {
+                    $block.fadeTo(150, 0.3, function () {
+                        $block.html(res.html).fadeTo(150, 1);
+                    });
+                }
+
+            });
+
+            CURRENT_VERSION = parseInt(res.version || CURRENT_VERSION);
+            IS_REFRESHING = false;
+        });
+    }
+
 
     function checkLayoutUpdate() {
 
@@ -49,26 +84,24 @@ jQuery(document).ready(function ($) {
             action: 'nhl_get_layout_version'
         }, function (res) {
 
-            if (!res || !res.version) return;
+            if (!res || !res.version || !res.category) return;
 
             let NEW_VERSION = parseInt(res.version);
+            let CHANGED_CATEGORY = res.category;
 
             if (NEW_VERSION !== CURRENT_VERSION) {
-                console.log('🟢 Layout updated, refreshing frontend…');
-
-                // Update version BEFORE reload (important)
-                CURRENT_VERSION = NEW_VERSION;
-
-                // Small delay to avoid browser block
-                setTimeout(function () {
-                    location.reload();
-                }, 300);
+                console.log(
+                    '🟢 Refresh category blocks:',
+                    CHANGED_CATEGORY
+                );
+                refreshHomeLayout(CHANGED_CATEGORY);
             }
         });
     }
 
-    // Check every 5 seconds
+
     setInterval(checkLayoutUpdate, 5000);
 
 })(jQuery);
+
 
